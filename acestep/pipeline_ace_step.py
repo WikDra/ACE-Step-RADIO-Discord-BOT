@@ -1393,9 +1393,12 @@ class ACEStepPipeline:
                 output_path_wav = save_path
 
         target_wav = target_wav.float()
-        logger.info(f"Saving audio to {output_path_wav}")
+        backend = "soundfile"
+        if format == "ogg":
+            backend = "sox"
+        logger.info(f"Saving audio to {output_path_wav} using backend {backend}")
         torchaudio.save(
-            output_path_wav, target_wav, sample_rate=sample_rate, format=format
+            output_path_wav, target_wav, sample_rate=sample_rate, format=format, backend=backend
         )
         return output_path_wav
 
