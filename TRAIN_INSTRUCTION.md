@@ -1,48 +1,101 @@
 # Training Instruction
 
 ## 1. Data Preparation
-1. First, check the format of data preparation in the `data` directory under the root directory of the project page.
-Prepare your audio. If you already have well-labeled audio, that's great.
-If you don't have labels, you can use the following prompt and utilize Qwen Omini to label your audio. The community welcomes contributions of better prompts, as well as annotation tools and UI.
 
-How to get an audio's reception? 
-You can use `Qwen-Omini` https://chat.qwen.ai/ to describe an audio.
-Here we share the prompt we used.
+### Required File Format
+For each audio sample, you need **exactly 3 files** in the `data` directory:
 
-```python
-sys_prompt_without_tag = """Analyze the input audio and generate 6 description variants. Each variant must be <200 characters. Follow these exact definitions:
+1. **`filename.mp3`** - The audio file
+2. **`filename_prompt.txt`** - Audio characteristics (comma-separated tags)  
+3. **`filename_lyrics.txt`** - Song lyrics (optional, but recommended)
 
-1.  `simplified`: Use only one most representative tag from the valid set.
-2.  `expanded`: Broaden valid tags to include related sub-genres/techniques.
-3.  `descriptive`: Convert tags into a sensory-rich sentence based *only on the sound*. DO NOT transcribe or reference the lyrics.
-4.  `synonyms`: Replace tags with equivalent terms (e.g., 'strings' → 'orchestral').
-5.  `use_cases`: Suggest practical applications based on audio characteristics.
-6.  `analysis`: Analyze the audio's genre, instruments, tempo, and mood **based strictly on the audible musical elements**. Technical breakdown in specified format.
-    *   For the `instruments` list: **Only include instruments that are actually heard playing in the audio recording.** **Explicitly ignore any instruments merely mentioned or sung about in the lyrics.** Cover all audibly present instruments.
-7. `lyrical_rap_check`: if the audio is lyrical rap
-**Strictly ignore any information derived solely from the lyrics when performing the analysis, especially for identifying instruments.**
-
-**Output Format:**
-```json
-{
-  "simplified": <str>,
-  "expanded": <str>,
-  "descriptive": <str>,
-  "synonyms": <str>,
-  "use_cases": <str>,
-  "analysis": {
-    "genre": <str list>,
-    "instruments": <str list>,
-    "tempo": <str>,
-    "mood": <str list>
-  },
-  "lyrical_rap_check": <bool>
-}
-"""
+### Example Data Structure
+```
+data/
+├── test_track_001.mp3
+├── test_track_001_prompt.txt
+└── test_track_001_lyrics.txt
 ```
 
+### File Content Format
+
+#### `*_prompt.txt` - Audio Tags
+Simple comma-separated audio characteristics describing the sound, instruments, genre, mood, etc.
+
+**Example:**
+```
+melodic techno, male vocal, electronic, emotional, minor key, 124 bpm, synthesizer, driving, atmospheric
+```
+
+**Guidelines for creating prompt tags:**
+- Include **genre** (e.g., "rap", "pop", "rock", "electronic")
+- Include **vocal type** (e.g., "male vocal", "female vocal", "spoken word")
+- Include **instruments** actually heard (e.g., "guitar", "piano", "synthesizer", "drums")
+- Include **mood/energy** (e.g., "energetic", "calm", "aggressive", "melancholic")  
+- Include **tempo** if known (e.g., "120 bpm", "fast tempo", "slow tempo")
+- Include **key** if known (e.g., "major key", "minor key", "C major")
+
+#### `*_lyrics.txt` - Song Lyrics
+Standard song lyrics with verse/chorus structure.
+
+**Example:**
+```
+[Verse]
+Lately I've been wondering
+Why do I do this to myself
+I should be over it
+
+[Chorus]  
+It makes me want to cry
+If you knew what you meant to me
+I wonder if you'd come back
+```
+
+### ⚠️ Important Notes
+- **File naming is strict**: Must follow `filename.mp3`, `filename_prompt.txt`, `filename_lyrics.txt` pattern
+- **JSON files are NOT supported** - the converter only reads the simple text files above
+- **Complex multi-variant descriptions are NOT used** - only the simple comma-separated prompt format works
+
 ## 2. Convert to Huggingface Dataset Format
-2. Run `python convert2hf_dataset.py --data_dir "./data" --repeat_count 2000 --output_name "zh_lora_dataset"`. (Since there is only one piece of sample data, it is repeated 2000 times. You can adjust it according to the size of your data.)
+
+Run the following command to convert your data to the training format:
+
+```bash
+python convert2hf_dataset.py --data_dir "./data" --repeat_count 2000 --output_name "zh_lora_dataset"
+```
+
+**Parameters:**
+- `--data_dir`: Path to your data directory containing the MP3, prompt, and lyrics files
+- `--repeat_count`: Number of times to repeat your data (use higher values for small datasets)  
+- `--output_name`: Name of the output dataset directory
+
+### What the Converter Creates
+
+The converter processes your files and creates a Huggingface dataset with these features:
+
+```python
+Dataset Features:
+{
+    'keys': string,              # filename (e.g., "test_track_001")
+    'filename': string,          # path to MP3 file  
+    'tags': list[string],        # parsed prompt tags as array
+    'speaker_emb_path': string,  # (empty, not used)
+    'norm_lyrics': string,       # full lyrics text
+    'recaption': dict            # (empty, not used)
+}
+```
+
+**Example processed sample:**
+```python
+{
+    'keys': 'test_track_001',
+    'filename': 'data/test_track_001.mp3',
+    'tags': ['melodic techno', 'male vocal', 'electronic', 'emotional', 'minor key', '124 bpm', 'synthesizer', 'driving', 'atmospheric'],
+    'speaker_emb_path': '',
+    'norm_lyrics': '[Verse]\nLately I\'ve been wondering\nWhy do I do this to myself...',
+    'recaption': {}
+}
+```
 
 ## 3. Configure Lora Parameters
 Refer to `config/zh_rap_lora_config.json` for configuring Lora parameters.
