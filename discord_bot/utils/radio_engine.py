@@ -88,8 +88,9 @@ class RadioEngine:
             self.ace_pipeline = ACEStepPipeline(
                 checkpoint_dir=self.checkpoint_path,
                 dtype=TORCH_DTYPE,
-                torch_compile=False,  # Disable for stability
-                cpu_offload=self.cpu_offload  # Pass CPU offload setting
+                torch_compile=TORCH_COMPILE,  # Use official recommendation
+                cpu_offload=self.cpu_offload,  # Pass CPU offload setting
+                overlapped_decode=OVERLAPPED_DECODE  # Official 8GB VRAM optimization
             )
         return self.ace_pipeline
     

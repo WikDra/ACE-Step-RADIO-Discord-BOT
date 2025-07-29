@@ -18,8 +18,8 @@ loguru>=0.7.0  # For ACE-Step logging
 # UI (opcjonalne - zachowanie Gradio)
 gradio>=4.0.0
 
-# Windows specific
-# triton-windows  # Uncomment if needed
+# Windows specific - ACE-Step Official 8GB VRAM Optimization
+triton-windows  # Required for torch_compile on Windows
 
 # Development
 pytest

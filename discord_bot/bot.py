@@ -151,9 +151,10 @@ class RadioBot(commands.Bot):
                 
                 # VRAM warning for 8GB cards
                 if vram_gb < 10:  # Less than 10GB VRAM
-                    logger.warning(f"⚠️ Limited VRAM ({vram_gb:.1f}GB) - CPU_OFFLOAD=true recommended")
+                    logger.warning(f"⚠️ Limited VRAM ({vram_gb:.1f}GB) - Using ACE-Step Official 8GB Optimization")
+                    logger.info("🔥 ACE-Step 2025.05.10: CPU_OFFLOAD + TORCH_COMPILE + OVERLAPPED_DECODE")
                     if not CPU_OFFLOAD:
-                        logger.warning("💡 Set CPU_OFFLOAD=true in .env for better performance")
+                        logger.warning("💡 Set CPU_OFFLOAD=true in .env for optimal 8GB performance")
                 else:
                     logger.info(f"✅ Sufficient VRAM ({vram_gb:.1f}GB) detected")
             else:

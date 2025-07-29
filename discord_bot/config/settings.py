@@ -40,6 +40,11 @@ LLM_CONTEXT_SIZE = 4096
 LLM_GPU_LAYERS = -1  # -1 = all layers on GPU
 TORCH_DTYPE = "float16"  # float32 dla CPU
 
+# ACE-Step Official Performance Settings (2025.05.10 Memory Optimization)
+# Recommended for 8GB VRAM: --torch_compile true --cpu_offload true --overlapped_decode true
+TORCH_COMPILE = os.getenv("TORCH_COMPILE", "true" if CPU_OFFLOAD else "false").lower() == "true"
+OVERLAPPED_DECODE = os.getenv("OVERLAPPED_DECODE", "true" if CPU_OFFLOAD else "false").lower() == "true"
+
 # ACE-Step defaults z radio_gradio.py (after CPU_OFFLOAD is defined)
 DEFAULT_GENRE = "pop"
 DEFAULT_THEME = "love"
