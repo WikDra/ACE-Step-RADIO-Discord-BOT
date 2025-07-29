@@ -202,3 +202,20 @@ pipeline_ace_step_demo.py
 *.wav
 start.sh
 exps/*
+
+# Discord Bot specific
+discord_radio.log
+bot_metrics.json
+bot_statistics.json
+ace_discord_output/
+ace_temp/
+discord_output/
+temp_audio/
+.env
+ace-radio-venv/
+*.pcm
+upload_*.mp3
+upload_*.wav
+discord_*.pcm
+faded_*.wav
+trimmed_*.wav

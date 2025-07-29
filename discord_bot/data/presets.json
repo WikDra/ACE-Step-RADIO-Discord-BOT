@@ -1,0 +1,44 @@
+{
+  "party": {
+    "genre": "edm",
+    "theme": "energetic",
+    "language": "english",
+    "duration": 180,
+    "description": "Energetyczna muzyka do tańca"
+  },
+  "chill": {
+    "genre": "ambient",
+    "theme": "relaxing",
+    "language": "english",
+    "duration": 240,
+    "description": "Spokojna muzyka do relaksu"
+  },
+  "polish_pop": {
+    "genre": "pop",
+    "theme": "love",
+    "language": "polish",
+    "duration": 210,
+    "description": "Polski pop o miłości"
+  },
+  "workout": {
+    "genre": "electronic",
+    "theme": "motivational",
+    "language": "english",
+    "duration": 180,
+    "description": "Motywująca muzyka do ćwiczeń"
+  },
+  "romantic": {
+    "genre": "pop",
+    "theme": "love",
+    "language": "current",
+    "duration": 200,
+    "description": "Romantyczne utwory"
+  },
+  "focus": {
+    "genre": "ambient",
+    "theme": "calm",
+    "language": "instrumental",
+    "duration": 300,
+    "description": "Muzyka do koncentracji"
+  }
+}

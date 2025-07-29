@@ -1,0 +1,34 @@
+# Core Discord
+discord.py>=2.3.0
+
+# Audio & AI
+torch>=2.0.0
+torchaudio
+transformers>=4.40.0
+accelerate
+llama-cpp-python
+soundfile
+librosa
+
+# UI (opcjonalne - zachowanie Gradio)
+gradio>=4.0.0
+
+# Windows specific
+# triton-windows  # Uncomment if needed
+
+# Development
+pytest
+black
+ruff
+
+# ACE-Step dependencies (from original requirements.txt)
+diffusers>=0.30.0
+tokenizers
+safetensors
+numpy
+scipy
+matplotlib
+seaborn
+tqdm
+omegaconf
+hydra-core

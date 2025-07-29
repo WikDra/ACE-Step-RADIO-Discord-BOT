@@ -1,0 +1,28 @@
+{
+  "supported_languages": [
+    "english",
+    "polish", 
+    "spanish",
+    "french",
+    "german",
+    "italian",
+    "portuguese",
+    "russian",
+    "chinese",
+    "japanese",
+    "korean"
+  ],
+  "language_flags": {
+    "english": "🇺🇸",
+    "polish": "🇵🇱",
+    "spanish": "🇪🇸", 
+    "french": "🇫🇷",
+    "german": "🇩🇪",
+    "italian": "🇮🇹",
+    "portuguese": "🇵🇹",
+    "russian": "🇷🇺",
+    "chinese": "🇨🇳",
+    "japanese": "🇯🇵",
+    "korean": "🇰🇷"
+  }
+}
