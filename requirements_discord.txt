@@ -13,6 +13,7 @@ accelerate
 llama-cpp-python
 soundfile
 librosa
+loguru>=0.7.0  # For ACE-Step logging
 
 # UI (opcjonalne - zachowanie Gradio)
 gradio>=4.0.0
