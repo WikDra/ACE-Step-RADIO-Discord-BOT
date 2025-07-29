@@ -1,6 +1,16 @@
 @echo off
-echo 🎵 ACE-Step Discord Radio Setup
+echo 🎵 ACE-Step Discord Radio Setup (Advanced - pip only)
 echo.
+echo ⚠️ UWAGA: Ten skrypt używa pip zamiast conda!
+echo ⚠️ Może powodować konflikty zależności z PyTorch/CUDA
+echo ⚠️ Zalecamy użycie setup.bat z conda
+echo.
+set /p continue="Czy kontynuować? (tak/nie): "
+if /i not "%continue%"=="tak" (
+    echo Anulowano. Użyj setup.bat dla bezpiecznej instalacji.
+    pause
+    exit /b 0
+)
 
 REM 1. Sprawdź czy jesteśmy w poprawnym katalogu
 if not exist "radio_gradio.py" (
@@ -26,43 +36,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [2/6] Sprawdzanie Conda...
-conda --version >nul 2>&1
-if errorlevel 1 (
-    echo ❌ BŁĄD: Conda nie znaleziona!
-    echo.
-    echo ⚠️ WAŻNE: Ten projekt wymaga Conda do prawidłowej instalacji PyTorch z CUDA
-    echo.
-    echo 📥 Zainstaluj Miniconda lub Anaconda:
-    echo   - Miniconda: https://docs.conda.io/en/latest/miniconda.html
-    echo   - Anaconda: https://www.anaconda.com/download
-    echo.
-    echo 🔄 Po instalacji uruchom ponownie ten skrypt
-    pause
-    exit /b 1
-) else (
-    set USE_CONDA=true
-)
+echo [2/6] Tworzenie venv...
+python -m venv ace-radio-venv
+call ace-radio-venv\Scripts\activate.bat
 
-REM 3. Tworzenie środowiska
-echo [3/6] Tworzenie środowiska Python...
-echo Tworzenie środowiska Conda...
-conda create -n ace-radio python=3.10 -y
-call conda activate ace-radio
+echo [3/6] Aktualizacja pip...
+python -m pip install --upgrade pip
 
-echo Instalowanie PyTorch z CUDA...
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+echo [4/6] Instalowanie PyTorch (może być niestabilne!)...
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-REM 4. Instalowanie zależności Discord
-echo [4/6] Instalowanie zależności Discord...
+echo [5/6] Instalowanie zależności Discord...
 pip install -r requirements_discord.txt
 
-REM 5. Instalowanie ACE-Step
-echo [5/6] Instalowanie ACE-Step...
+echo [6/6] Instalowanie ACE-Step...
 pip install -e .
 
-REM 6. Sprawdzanie FFmpeg
-echo [6/6] Sprawdzanie FFmpeg...
+REM Sprawdzanie FFmpeg
+echo [7/7] Sprawdzanie FFmpeg...
 ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo ⚠️ FFmpeg nie znaleziony!
@@ -70,9 +61,9 @@ if errorlevel 1 (
     echo I dodaj do PATH
 )
 
-REM 7. Tworzenie pliku .env
+REM Tworzenie pliku .env
 echo.
-echo [7/7] Konfiguracja...
+echo [8/8] Konfiguracja...
 if not exist ".env" (
     echo Tworzenie pliku .env...
     echo DISCORD_TOKEN=TWOJ_TOKEN_TUTAJ > .env
@@ -81,7 +72,8 @@ if not exist ".env" (
 )
 
 echo.
-echo ✅ Setup zakończony!
+echo ⚠️ Setup zakończony (pip version)!
+echo ⚠️ UWAGA: W przypadku problemów użyj setup.bat z conda
 echo.
 echo 📋 Następne kroki:
 echo 1. Ustaw DISCORD_TOKEN w pliku .env
@@ -89,6 +81,6 @@ echo 2. Pobierz modele ACE-Step (jeśli jeszcze nie masz)
 echo 3. Uruchom bota: python discord_bot/bot.py
 echo.
 echo 🔧 Aktywacja środowiska:
-echo   conda activate ace-radio
+echo   ace-radio-venv\Scripts\activate.bat
 echo.
 pause

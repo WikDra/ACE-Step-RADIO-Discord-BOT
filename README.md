@@ -21,8 +21,10 @@ Discord bot for real-time AI music generation, based on **ACE-Step** and **PasiK
 ```bash
 git clone https://github.com/WikDra/ACE-Step-RADIO-Discord-BOT.git
 cd ACE-Step-RADIO-Discord-BOT
-setup.bat  # Windows setup script
+setup.bat  # Windows setup script (requires Conda!)
 ```
+
+> **⚠️ IMPORTANT**: `setup.bat` requires **Conda** for proper PyTorch/CUDA installation. Pure pip installation can cause dependency conflicts. For advanced users who insist on pip, use `setup_advanced_pip.bat` (not recommended).
 
 ### 2. Configuration
 ```bash
