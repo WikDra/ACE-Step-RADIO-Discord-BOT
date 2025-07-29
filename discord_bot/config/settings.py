@@ -3,6 +3,10 @@ Windows-specific configuration for ACE-Step Discord Bot
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ==================== PATHS ====================
 # Bazuj na rzeczywistych ścieżkach z ACE-Step
@@ -30,17 +34,17 @@ DISCORD_SAMPLE_RATE = 48000
 DISCORD_CHANNELS = 2
 DISCORD_FRAME_SIZE = 20  # ms
 
-# ACE-Step defaults z radio_gradio.py
-DEFAULT_GENRE = "pop"
-DEFAULT_THEME = "love"
-DEFAULT_LANGUAGE = "english"  
-DEFAULT_DURATION = 60
-MAX_LENGTH_MIN = 30
-MAX_LENGTH_MAX = 300
-BUFFER_SIZE = 3
-
 # ==================== PERFORMANCE ====================
-CPU_OFFLOAD = False  # Set True dla słabszych GPU
+CPU_OFFLOAD = os.getenv("CPU_OFFLOAD", "false").lower() == "true"  # Read from .env
 LLM_CONTEXT_SIZE = 4096
 LLM_GPU_LAYERS = -1  # -1 = all layers on GPU
 TORCH_DTYPE = "float16"  # float32 dla CPU
+
+# ACE-Step defaults z radio_gradio.py (after CPU_OFFLOAD is defined)
+DEFAULT_GENRE = "pop"
+DEFAULT_THEME = "love"
+DEFAULT_LANGUAGE = "english"  
+DEFAULT_DURATION = 30 if CPU_OFFLOAD else 60  # Shorter for limited VRAM
+MAX_LENGTH_MIN = 30
+MAX_LENGTH_MAX = 120 if CPU_OFFLOAD else 300  # Reduced max for 8GB VRAM
+BUFFER_SIZE = 2 if CPU_OFFLOAD else 3  # Smaller buffer for limited VRAM

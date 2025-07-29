@@ -13,12 +13,18 @@ from pathlib import Path
 from datetime import datetime
 
 # Local imports
-from ..utils.radio_engine import RadioEngine
-from ..utils.queue_manager import RadioQueue, TrackInfo
-from ..utils.audio_converter import AudioConverter
-from ..utils.metrics import get_metrics
-from ..config.constants import ERROR_MESSAGES, SUCCESS_MESSAGES, SupportedLanguages, MusicGenres, MusicThemes
-from ..config.settings import *
+import sys
+from pathlib import Path
+
+# Add project root to path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from discord_bot.utils.radio_engine import RadioEngine
+from discord_bot.utils.queue_manager import RadioQueue, TrackInfo
+from discord_bot.utils.audio_converter import AudioConverter
+from discord_bot.utils.metrics import get_metrics
+from discord_bot.config.constants import ERROR_MESSAGES, SUCCESS_MESSAGES, SupportedLanguages, MusicGenres, MusicThemes
+from discord_bot.config.settings import *
 
 class RadioCog(commands.Cog):
     """Główny cog z komendami Discord Radio"""
@@ -26,7 +32,7 @@ class RadioCog(commands.Cog):
     def __init__(self, bot):
         """Inicjalizacja cog"""
         self.bot = bot
-        self.radio_engine = RadioEngine()
+        self.radio_engine = RadioEngine(cpu_offload=CPU_OFFLOAD)
         self.voice_clients = {}  # guild_id: discord.VoiceClient
         self.queues = {}        # guild_id: RadioQueue  
         self.playing_tasks = {} # guild_id: asyncio.Task

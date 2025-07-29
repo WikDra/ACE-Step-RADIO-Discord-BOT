@@ -17,7 +17,11 @@ from acestep.pipeline_ace_step import ACEStepPipeline
 from acestep.schedulers import FlowMatchEulerDiscreteScheduler
 
 # Local imports
-from ..config.settings import *
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from discord_bot.config.settings import *
 
 class RadioEngine:
     def __init__(self, checkpoint_path: str = None, cpu_offload: bool = False):
@@ -84,7 +88,8 @@ class RadioEngine:
             self.ace_pipeline = ACEStepPipeline(
                 checkpoint_dir=self.checkpoint_path,
                 dtype=TORCH_DTYPE,
-                torch_compile=False  # Disable for stability
+                torch_compile=False,  # Disable for stability
+                cpu_offload=self.cpu_offload  # Pass CPU offload setting
             )
         return self.ace_pipeline
     

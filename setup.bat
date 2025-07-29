@@ -27,7 +27,7 @@ if errorlevel 1 (
 )
 
 echo [2/6] Sprawdzanie Conda...
-conda --version >nul 2>&1
+where conda >nul 2>&1
 if errorlevel 1 (
     echo ❌ BŁĄD: Conda nie znaleziona!
     echo.
@@ -41,28 +41,33 @@ if errorlevel 1 (
     pause
     exit /b 1
 ) else (
+    echo ✅ Conda znaleziona
     set USE_CONDA=true
 )
 
 REM 3. Tworzenie środowiska
-echo [3/6] Tworzenie środowiska Python...
-echo Tworzenie środowiska Conda...
-conda create -n ace-radio python=3.10 -y
-call conda activate ace-radio
+echo [3/6] Sprawdzanie środowiska Python...
+conda env list | findstr "ace-radio" >nul 2>&1
+if errorlevel 1 (
+    echo Tworzenie nowego środowiska Conda...
+    conda create -n ace-radio python=3.10 -y
+) else (
+    echo ✅ Środowisko ace-radio już istnieje
+)
 
-echo Instalowanie PyTorch z CUDA...
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+echo [4/6] Instalowanie PyTorch z CUDA...
+conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
 
 REM 4. Instalowanie zależności Discord
-echo [4/6] Instalowanie zależności Discord...
-pip install -r requirements_discord.txt
+echo [5/6] Instalowanie zależności Discord...
+conda run -n ace-radio pip install -r requirements_discord.txt
 
 REM 5. Instalowanie ACE-Step
-echo [5/6] Instalowanie ACE-Step...
-pip install -e .
+echo [6/6] Instalowanie ACE-Step...
+conda run -n ace-radio pip install -e .
 
 REM 6. Sprawdzanie FFmpeg
-echo [6/6] Sprawdzanie FFmpeg...
+echo [7/8] Sprawdzanie FFmpeg...
 ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo ⚠️ FFmpeg nie znaleziony!
@@ -72,7 +77,7 @@ if errorlevel 1 (
 
 REM 7. Tworzenie pliku .env
 echo.
-echo [7/7] Konfiguracja...
+echo [8/8] Konfiguracja...
 if not exist ".env" (
     echo Tworzenie pliku .env...
     echo DISCORD_TOKEN=TWOJ_TOKEN_TUTAJ > .env

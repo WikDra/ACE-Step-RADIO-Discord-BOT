@@ -17,6 +17,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from config.settings import *
 from config.constants import ERROR_MESSAGES, SUCCESS_MESSAGES
 from utils.metrics import init_metrics
+from utils.model_downloader import ensure_models_available, check_model_space
 
 # ==================== LOGGING ====================
 logging.basicConfig(
@@ -68,6 +69,27 @@ class RadioBot(commands.Bot):
             # Initialize metrics
             self.metrics = init_metrics(self)
             logger.info("Metrics collector initialized")
+            
+            # Download models if needed
+            logger.info("🔍 Checking and downloading models...")
+            check_model_space(MODELS_DIR)
+            
+            # Run model download in thread to avoid blocking
+            import asyncio
+            loop = asyncio.get_event_loop()
+            llm_ok, ace_ok = await loop.run_in_executor(
+                None, ensure_models_available, MODELS_DIR
+            )
+            
+            if llm_ok:
+                logger.info("✅ LLM model ready")
+            else:
+                logger.warning("⚠️ LLM model not available - lyrics generation may fail")
+                
+            if ace_ok:
+                logger.info("✅ ACE-Step models ready")
+            else:
+                logger.warning("⚠️ ACE-Step models not available - music generation may fail")
             
             # Załaduj RadioCog
             await self.load_extension('cogs.radio_cog')
@@ -123,7 +145,17 @@ class RadioBot(commands.Bot):
             # Test CUDA
             import torch
             if torch.cuda.is_available():
-                logger.info(f"✅ CUDA available - {torch.cuda.get_device_name()}")
+                device_name = torch.cuda.get_device_name()
+                vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+                logger.info(f"✅ CUDA available - {device_name}")
+                
+                # VRAM warning for 8GB cards
+                if vram_gb < 10:  # Less than 10GB VRAM
+                    logger.warning(f"⚠️ Limited VRAM ({vram_gb:.1f}GB) - CPU_OFFLOAD=true recommended")
+                    if not CPU_OFFLOAD:
+                        logger.warning("💡 Set CPU_OFFLOAD=true in .env for better performance")
+                else:
+                    logger.info(f"✅ Sufficient VRAM ({vram_gb:.1f}GB) detected")
             else:
                 logger.info("ℹ️ CUDA not available - using CPU")
             

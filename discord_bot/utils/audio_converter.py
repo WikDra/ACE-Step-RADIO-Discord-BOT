@@ -7,7 +7,11 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
-from ..config.settings import DISCORD_SAMPLE_RATE, DISCORD_CHANNELS, MAX_FILE_SIZE
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from discord_bot.config.settings import DISCORD_SAMPLE_RATE, DISCORD_CHANNELS, MAX_FILE_SIZE
 
 class AudioConverter:
     """Klasa do konwersji audio dla Discord"""

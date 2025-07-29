@@ -10,8 +10,12 @@ from typing import List, Optional, Dict
 from pathlib import Path
 
 # Local imports
-from ..config.settings import *
-from ..config.constants import SupportedLanguages
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+from discord_bot.config.settings import *
+from discord_bot.config.constants import SupportedLanguages
 
 @dataclass
 class TrackInfo:
