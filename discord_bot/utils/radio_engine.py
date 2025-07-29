@@ -85,13 +85,40 @@ class RadioEngine:
         """Załaduj ACE-Step Pipeline"""
         if self.ace_pipeline is None:
             print("Loading ACE-Step Pipeline...")
-            self.ace_pipeline = ACEStepPipeline(
-                checkpoint_dir=self.checkpoint_path,
-                dtype=TORCH_DTYPE,
-                torch_compile=TORCH_COMPILE,  # Use official recommendation
-                cpu_offload=self.cpu_offload,  # Pass CPU offload setting
-                overlapped_decode=OVERLAPPED_DECODE  # Official 8GB VRAM optimization
-            )
+            
+            # Try with torch_compile first, fallback to eager mode if it fails
+            torch_compile_enabled = TORCH_COMPILE
+            
+            try:
+                self.ace_pipeline = ACEStepPipeline(
+                    checkpoint_dir=self.checkpoint_path,
+                    dtype=TORCH_DTYPE,
+                    torch_compile=torch_compile_enabled,  # Use official recommendation
+                    cpu_offload=self.cpu_offload,  # Pass CPU offload setting
+                    overlapped_decode=OVERLAPPED_DECODE  # Official 8GB VRAM optimization
+                )
+            except Exception as e:
+                if torch_compile_enabled and TORCH_COMPILE_FALLBACK:
+                    print(f"⚠️ torch_compile failed ({e}), falling back to eager mode...")
+                    # Set torch._dynamo fallback for this session
+                    try:
+                        import torch._dynamo
+                        torch._dynamo.config.suppress_errors = True
+                        print("✅ Dynamo suppress_errors enabled")
+                    except ImportError:
+                        pass
+                    
+                    # Retry without torch_compile
+                    self.ace_pipeline = ACEStepPipeline(
+                        checkpoint_dir=self.checkpoint_path,
+                        dtype=TORCH_DTYPE,
+                        torch_compile=False,  # Disabled for Windows compatibility
+                        cpu_offload=self.cpu_offload,
+                        overlapped_decode=OVERLAPPED_DECODE
+                    )
+                    print("✅ ACE-Step Pipeline loaded in eager mode")
+                else:
+                    raise
         return self.ace_pipeline
     
     def _unload_ace_pipeline(self) -> None:

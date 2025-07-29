@@ -42,8 +42,10 @@ TORCH_DTYPE = "float16"  # float32 dla CPU
 
 # ACE-Step Official Performance Settings (2025.05.10 Memory Optimization)
 # Recommended for 8GB VRAM: --torch_compile true --cpu_offload true --overlapped_decode true
-TORCH_COMPILE = os.getenv("TORCH_COMPILE", "true" if CPU_OFFLOAD else "false").lower() == "true"
+# NOTE: torch_compile may have issues on Windows - we'll handle fallback in code
+TORCH_COMPILE = os.getenv("TORCH_COMPILE", "false").lower() == "true"  # Disabled by default on Windows
 OVERLAPPED_DECODE = os.getenv("OVERLAPPED_DECODE", "true" if CPU_OFFLOAD else "false").lower() == "true"
+TORCH_COMPILE_FALLBACK = True  # Auto-fallback to eager mode on torch_compile errors
 
 # ACE-Step defaults z radio_gradio.py (after CPU_OFFLOAD is defined)
 DEFAULT_GENRE = "pop"
