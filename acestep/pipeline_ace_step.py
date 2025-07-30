@@ -289,9 +289,9 @@ class ACEStepPipeline:
             vocoder_checkpoint_path=vocoder_checkpoint_path,
         )
         if self.cpu_offload:
-            self.music_dcae.eval().to(self.dtype).to(self.device)
+            self.music_dcae.eval().to(self.dtype).to('cpu')  # FIXED: CPU for offload
         else:
-            self.music_dcae.eval().to(self.dtype).to('cpu')
+            self.music_dcae.eval().to(self.dtype).to(self.device)
         self.music_dcae = torch.compile(self.music_dcae)
 
         self.ace_step_transformer = ACEStepTransformer2DModel.from_pretrained(ace_step_checkpoint_path)
@@ -300,7 +300,7 @@ class ACEStepPipeline:
         self.ace_step_transformer.load_state_dict(
             torch.load(
                 os.path.join(ace_step_checkpoint_path, "diffusion_pytorch_model_int4wo.bin"),
-                map_location=self.device,
+                map_location='cpu' if self.cpu_offload else self.device,  # FIXED: CPU map for offload
             ),assign=True
         )
         self.ace_step_transformer.torchao_quantized = True
@@ -311,7 +311,7 @@ class ACEStepPipeline:
         self.text_encoder_model.load_state_dict(
             torch.load(
                 os.path.join(text_encoder_checkpoint_path, "pytorch_model_int4wo.bin"),
-                map_location=self.device,
+                map_location='cpu' if self.cpu_offload else self.device,  # FIXED: CPU map for offload
             ), assign=True
         )
         self.text_encoder_model.torchao_quantized = True

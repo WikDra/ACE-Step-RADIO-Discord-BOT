@@ -245,6 +245,82 @@ class RadioCog(commands.Cog):
         
         await interaction.response.send_message(embed=embed)
     
+    @app_commands.command(name="radio_pause", description="Zatrzymaj odtwarzanie (generacja działa dalej)")
+    async def radio_pause(self, interaction: discord.Interaction):
+        """Pause current playback but keep generation running"""
+        guild_id = interaction.guild.id
+        
+        if guild_id not in self.voice_clients:
+            embed = self.create_error_embed(ERROR_MESSAGES["bot_not_connected"])
+            await interaction.response.send_message(embed=embed)
+            return
+            
+        voice_client = self.voice_clients[guild_id]
+        queue = self.queues.get(guild_id)
+        
+        if voice_client.is_playing():
+            voice_client.pause()
+            if queue:
+                queue.pause_playback()
+            embed = self.create_success_embed(
+                "⏸️ **Zatrzymano odtwarzanie**\n\n"
+                "🔄 Generacja utworów działa dalej w tle\n"
+                "📦 Bufor będzie się zapełniał\n"
+                "💡 Użyj `/radio_resume` aby wznowić"
+            )
+        else:
+            if queue:
+                queue.pause_playback()
+            embed = self.create_success_embed(
+                "⏸️ **Zatrzymano odtwarzanie**\n\n"
+                "🔄 Nowe utwory będą czekać w kolejce\n"
+                "💡 Użyj `/radio_resume` gdy będziesz gotowy"
+            )
+            
+        await interaction.response.send_message(embed=embed)
+    
+    @app_commands.command(name="radio_resume", description="Wznów zatrzymane odtwarzanie")
+    async def radio_resume(self, interaction: discord.Interaction):
+        """Resume paused playback"""
+        guild_id = interaction.guild.id
+        
+        if guild_id not in self.voice_clients:
+            embed = self.create_error_embed(ERROR_MESSAGES["bot_not_connected"])
+            await interaction.response.send_message(embed=embed)
+            return
+            
+        voice_client = self.voice_clients[guild_id]
+        queue = self.queues.get(guild_id)
+        
+        if voice_client.is_paused():
+            voice_client.resume()
+            if queue:
+                queue.resume_playback()
+            embed = self.create_success_embed("▶️ **Wznowiono odtwarzanie**")
+        elif queue and queue.playback_paused:
+            # Resume playback queue
+            queue.resume_playback()
+            # Check if we have tracks to play
+            if queue.get_next_track():
+                embed = self.create_success_embed(
+                    "▶️ **Wznowiono odtwarzanie**\n\n"
+                    f"📦 Bufor ma {len(queue.queue)} utworów gotowych do odtworzenia"
+                )
+                # Start playing if we have tracks
+                if guild_id not in self.playing_tasks and queue.auto_queue:
+                    self.playing_tasks[guild_id] = asyncio.create_task(
+                        self._maintain_queue(guild_id)
+                    )
+            else:
+                embed = self.create_success_embed(
+                    "▶️ **Odtwarzanie gotowe do wznowienia**\n\n"
+                    "🔄 Czekam na utwory z bufora..."
+                )
+        else:
+            embed = self.create_error_embed("❌ Nic nie jest zatrzymane")
+            
+        await interaction.response.send_message(embed=embed)
+
     @app_commands.command(name="radio_stop", description="Zatrzymaj radio i opuść kanał")
     async def radio_stop(self, interaction: discord.Interaction):
         """Stop and cleanup"""
@@ -442,6 +518,29 @@ class RadioCog(commands.Cog):
         """Pokaż ustawienia"""
         queue = self.get_queue(interaction.guild.id)
         status = queue.get_queue_status()
+        voice_client = self.voice_clients.get(interaction.guild.id)
+        
+        # Voice status
+        voice_status = "Rozłączony"
+        if voice_client:
+            if voice_client.is_paused():
+                voice_status = "⏸️ Zatrzymany"
+            elif voice_client.is_playing():
+                voice_status = "▶️ Gra"
+            else:
+                voice_status = "Podłączony"
+        
+        # Generation status
+        gen_status = "▶️ Aktywny"
+        if status['is_generating']:
+            gen_status = "🔄 Generuje"
+        elif not status['auto_queue']:
+            gen_status = "Wyłączony"
+        
+        # Playback status  
+        playback_status = "Gotowy"
+        if status['playback_paused']:
+            playback_status = "⏸️ Zatrzymany"
         
         embed = self.create_embed(
             "⚙️ Ustawienia Radio",
@@ -451,7 +550,10 @@ class RadioCog(commands.Cog):
             f"**Maks. długość:** {status['max_length']}s\n"
             f"**Auto-queue:** {'Tak' if status['auto_queue'] else 'Nie'}\n"
             f"**Utworów w kolejce:** {status['queue_length']}\n"
-            f"**Obecny utwór:** {status['current_track'] or 'Brak'}"
+            f"**Obecny utwór:** {status['current_track'] or 'Brak'}\n"
+            f"**Status odtwarzania:** {voice_status}\n"
+            f"**Status generacji:** {gen_status}\n"
+            f"**Kontrola odtwarzania:** {playback_status}"
         )
         
         await interaction.response.send_message(embed=embed)
@@ -460,11 +562,31 @@ class RadioCog(commands.Cog):
     async def radio_nowplaying(self, interaction: discord.Interaction):
         """Co gra teraz"""
         queue = self.get_queue(interaction.guild.id)
+        voice_client = self.voice_clients.get(interaction.guild.id)
+        
+        # Status indicators
+        status_icon = "🎵"
+        status_text = ""
+        
+        if voice_client:
+            if voice_client.is_paused():
+                status_icon = "⏸️"
+                status_text = " (Zatrzymane)"
+            elif voice_client.is_playing():
+                status_icon = "▶️"
+                status_text = " (Gra)"
+        
+        if queue.is_generating:
+            status_icon = "🔄"
+            status_text = " (Generuje nowy utwór)"
+        elif queue.playback_paused and not (voice_client and voice_client.is_playing()):
+            status_icon = "⏸️"
+            status_text = " (Odtwarzanie zatrzymane - generacja działa)"
         
         if queue.current_track:
             track = queue.current_track
             embed = self.create_embed(
-                "🎵 Teraz gra",
+                f"{status_icon} Teraz gra{status_text}",
                 f"**{track.title}**\n"
                 f"Gatunek: {track.genre}\n"
                 f"Temat: {track.theme}\n"
@@ -473,7 +595,7 @@ class RadioCog(commands.Cog):
                 f"Wygenerowano: {track.generated_at.strftime('%H:%M:%S')}"
             )
         else:
-            embed = self.create_embed("🎵 Teraz gra", "Nic nie gra")
+            embed = self.create_embed(f"{status_icon} Teraz gra{status_text}", "Nic nie gra")
         
         await interaction.response.send_message(embed=embed)
     
@@ -515,6 +637,8 @@ class RadioCog(commands.Cog):
 • `/radio_join` - Dołącz do kanału
 • `/radio_play` - Zagraj muzykę
 • `/radio_skip` - Pomiń utwór  
+• `/radio_pause` - Zatrzymaj odtwarzanie ⏸️
+• `/radio_resume` - Wznów odtwarzanie ▶️
 • `/radio_stop` - Zatrzymaj radio
 • `/radio_upload` - Wrzuć plik z utworem na kanał
 
@@ -535,6 +659,7 @@ class RadioCog(commands.Cog):
 • `/radio_stats` - Statystyki bota
 
 💡 Wszystkie parametry są opcjonalne!
+💡 Pause zatrzymuje tylko odtwarzanie - generacja działa dalej!
         """
         
         embed = self.create_embed("📚 Pomoc", help_text.strip())

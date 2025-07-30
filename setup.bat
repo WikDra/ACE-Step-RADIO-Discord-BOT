@@ -2,6 +2,22 @@
 echo 🎵 ACE-Step Discord Radio Setup
 echo.
 
+REM Check for admin privileges
+NET SESSION >nul 2>&1
+if errorlevel 1 (
+    echo ⚠️ WAŻNE: Uruchom jako Administrator!
+    echo.
+    echo 🔑 Windows wymaga uprawnień administratora dla:
+    echo   - Symlinks w HuggingFace cache
+    echo   - Prawidłowe działanie torch.compile
+    echo   - Optymalne performance ACE-Step
+    echo.
+    echo 💡 Kliknij prawym na setup.bat → "Uruchom jako administrator"
+    echo.
+    pause
+    exit /b 1
+)
+
 REM 1. Sprawdź czy jesteśmy w poprawnym katalogu
 if not exist "radio_gradio.py" (
     echo ❌ Błąd: Plik radio_gradio.py nie znaleziony!
@@ -56,7 +72,26 @@ if errorlevel 1 (
 )
 
 echo [4/6] Instalowanie PyTorch z CUDA...
-conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+echo 🔧 CUDA 12.4 (latest available for 8GB optimization)
+conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=12.4 -c pytorch -c nvidia -y
+
+if errorlevel 1 (
+    echo ⚠️ CUDA 12.4 installation failed, trying CUDA 12.1...
+    conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y
+    if errorlevel 1 (
+        echo ⚠️ CUDA 12.1 failed, trying legacy CUDA 11.8...
+        echo 💡 CUDA 11.8 is for older GPUs (GTX 10xx, RTX 20xx)
+        conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
+        echo ✅ CUDA 11.8 installed - CPU offload will work but slower
+    ) else (
+        echo ✅ CUDA 12.1 installed - good optimization for RTX 30xx/40xx
+    )
+) else (
+    echo ✅ CUDA 12.4 installed successfully - optimal for RTX 30xx/40xx
+)
+
+echo 💡 Note: CUDA 12.6/12.8 not yet available in conda
+REM conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=12.6 -c pytorch -c nvidia -y
 
 REM 4. Instalowanie zależności Discord
 echo [5/6] Instalowanie zależności Discord...

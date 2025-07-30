@@ -4,10 +4,37 @@ Discord bot for real-time AI music generation, based on **ACE-Step** and **PasiK
 
 > **🚨 IMPORTANT**: This project combines ACE-Step AI music generation with Discord integration. It requires significant computational resources (recommended: 8GB+ VRAM GPU).
 
+## ⚡ System Requirements
+
+- **VRAM**: Minimum 8GB (RTX 4060 Laptop/RTX 3060 8GB+)
+- **RAM**: 16GB+ system memory
+- **Python**: 3.10+ with CUDA support
+- **CUDA**: 12.4+ (for 8GB VRAM optimizations)
+- **Windows**: Run setup.bat as Administrator for symlinks
+
+### 🎯 VRAM Optimization Modes
+
+Bot automatically adapts to available VRAM:
+
+- **4-6GB**: CPU offload mode (slower but functional)
+- **8GB+**: CUDA with optimizations (fast)
+- **12GB+**: Full CUDA mode (fastest)
+
+### 🎮 GPU Compatibility
+
+| GPU Series | Recommended CUDA | VRAM Mode | Performance |
+|------------|------------------|-----------|-------------|
+| **GTX 10xx, RTX 20xx** | CUDA 11.8 | CPU Offload | ⚠️ Slower but works |
+| **RTX 30xx, RTX 40xx** | CUDA 12.6 | CPU Offload | 🚀 Fast optimization |
+| **High VRAM (12GB+)** | Any CUDA | Full CUDA | 🔥 Maximum speed |
+
+💡 **For RTX 4060 Laptop 8GB**: Set `CPU_OFFLOAD=true` in `.env`
+
 ## 🎯 Features
 
 - **🎵 Real-time Music Generation**: Generate unique songs instantly with AI
 - **🎛️ Discord Slash Commands**: Full integration with Discord's modern command system  
+- **⏸️ Smart Pause/Resume**: Control playback with `/radio_pause` & `/radio_resume` - generation continues in background!
 - **🌍 Multi-language Support**: Generate lyrics in 11+ languages
 - **📤 File Upload**: Share generated songs as files on Discord
 - **🎨 Music Presets**: Quick access to popular music combinations
@@ -51,6 +78,8 @@ python discord_bot/bot.py
 | **Basic** | `/radio_join` | Join voice channel |
 | | `/radio_play` | Play generated music |
 | | `/radio_skip` | Skip current track |
+| | `/radio_pause` | Pause playback ⏸️ |
+| | `/radio_resume` | Resume playback ▶️ |
 | | `/radio_stop` | Stop radio & leave |
 | | `/radio_upload` | Upload song file to channel |
 | **Settings** | `/radio_genre` | Set music genre |
@@ -64,6 +93,8 @@ python discord_bot/bot.py
 | | `/radio_stats` | Show bot statistics |
 | | `/radio_preset` | Use music presets |
 | | `/radio_help` | Show all commands |
+
+> **💡 Smart Pause/Resume**: Pause stops playback but generation continues in background to fill the buffer! Perfect for bathroom breaks while keeping music ready.
 
 ## 🎨 Music Presets
 
@@ -213,8 +244,29 @@ ls -la discord_output/
 ```
 
 ### Memory Issues
+
+⚠️ **VRAM Optimization Not Working**:
+```bash
+# Check CUDA version compatibility
+nvidia-smi
+
+# Bot uses 13GB instead of 8GB? Try:
+# 1. Run setup.bat as Administrator
+# 2. Update CUDA to 12.4+
+# 3. Set CPU_OFFLOAD=true in .env
+# 4. Restart conda environment
+```
+
+📝 **Common VRAM Problems**:
+- **Admin privileges**: Windows needs admin for symlinks
+- **CUDA 11.8**: Upgrade to 12.4+ for better optimization  
+- **torch.compile**: Disable if causing memory issues
+- **Model cache**: Clear ~/.cache/huggingface if corrupted
+
+🔧 **Memory Optimization**:
 - Reduce `MAX_LENGTH_MAX` in settings
-- Enable `CPU_OFFLOAD = True`
+- Enable `CPU_OFFLOAD = True` 
+- Set `TORCH_COMPILE = False` if unstable
 - Restart bot periodically for memory cleanup
 
 ## 📊 Bot Statistics

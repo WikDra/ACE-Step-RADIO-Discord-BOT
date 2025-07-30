@@ -149,14 +149,39 @@ class RadioBot(commands.Bot):
                 vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024**3)
                 logger.info(f"✅ CUDA available - {device_name}")
                 
-                # VRAM warning for 8GB cards
+                # VRAM detection and optimization warnings
                 if vram_gb < 10:  # Less than 10GB VRAM
                     logger.warning(f"⚠️ Limited VRAM ({vram_gb:.1f}GB) - Using ACE-Step Official 8GB Optimization")
                     logger.info("🔥 ACE-Step 2025.05.10: CPU_OFFLOAD + TORCH_COMPILE + OVERLAPPED_DECODE")
+                    logger.info(f"🔧 Configuration: CPU_OFFLOAD={CPU_OFFLOAD}, TORCH_COMPILE={TORCH_COMPILE}")
+                    
+                    # Check CUDA version compatibility
+                    cuda_version = torch.version.cuda
+                    if cuda_version and cuda_version.startswith("11."):
+                        logger.warning("🚨 CUDA 11.x detected - CPU offload may not work optimally")
+                        logger.warning("💡 Upgrade to CUDA 12.4+ for best 8GB performance")
+                        logger.warning("🔧 Run setup.bat as Administrator to upgrade CUDA")
+                    
                     if not CPU_OFFLOAD:
                         logger.warning("💡 Set CPU_OFFLOAD=true in .env for optimal 8GB performance")
+                    else:
+                        logger.info("✅ CPU offload enabled - should use ~6-8GB VRAM")
+                        
+                    if not TORCH_COMPILE:
+                        logger.warning("💡 Set TORCH_COMPILE=true in .env for maximum performance")
+                    else:
+                        logger.info("✅ Torch compile enabled - will attempt compilation with Windows fallback")
+                        
+                    # Admin privileges warning
+                    try:
+                        import os
+                        if os.name == 'nt':  # Windows
+                            logger.info("🔑 Ensure setup.bat was run as Administrator for symlinks")
+                    except:
+                        pass
+                        
                 else:
-                    logger.info(f"✅ Sufficient VRAM ({vram_gb:.1f}GB) detected")
+                    logger.info(f"✅ Sufficient VRAM ({vram_gb:.1f}GB) detected - Full CUDA mode")
             else:
                 logger.info("ℹ️ CUDA not available - using CPU")
             

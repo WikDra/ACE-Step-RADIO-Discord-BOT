@@ -81,6 +81,10 @@ class RadioQueue:
         self.history: List[TrackInfo] = []
         self.current_track: Optional[TrackInfo] = None
         
+        # Pause/Resume state
+        self.playback_paused = False  # Only affects playback, not generation
+        self.is_generating = False
+        
         print(f"RadioQueue initialized - Genre: {self.current_genre}, Theme: {self.current_theme}, Language: {self.current_language}")
     
     def set_max_length(self, seconds: int) -> bool:
@@ -233,9 +237,11 @@ class RadioQueue:
         if not self.auto_queue:
             return
         
+        # Generation continues even when playback is paused
         while len(self.queue) < self.buffer_size:
             try:
                 print(f"Buffer low ({len(self.queue)}/{self.buffer_size}), generating new track...")
+                self.is_generating = True
                 
                 # Generate lyrics
                 lyrics = await radio_engine.generate_lyrics_async(
@@ -264,9 +270,11 @@ class RadioQueue:
                 )
                 
                 self.add_track(track)
+                self.is_generating = False
                 
             except Exception as e:
                 print(f"Failed to generate track for buffer: {e}")
+                self.is_generating = False
                 break  # Stop trying if generation fails
     
     def get_queue_status(self) -> Dict:
@@ -284,7 +292,9 @@ class RadioQueue:
             "auto_queue": self.auto_queue,
             "queue_length": len(self.queue),
             "history_length": len(self.history),
-            "current_track": self.current_track.title if self.current_track else None
+            "current_track": self.current_track.title if self.current_track else None,
+            "playback_paused": self.playback_paused,
+            "is_generating": self.is_generating
         }
     
     def get_track_path(self, track_index: Optional[int] = None) -> Optional[Path]:
@@ -435,3 +445,39 @@ class RadioQueue:
         except Exception as e:
             print(f"Failed to load queue state: {e}")
             return False
+    
+    def pause_playback(self) -> bool:
+        """Pause only playback, generation continues"""
+        if not self.playback_paused:
+            self.playback_paused = True
+            print("Playback paused - generation continues in background")
+            return True
+        return False
+    
+    def resume_playback(self) -> bool:
+        """Resume playback"""
+        if self.playback_paused:
+            self.playback_paused = False
+            print("Playback resumed")
+            return True
+        return False
+    
+    def toggle_playback_pause(self) -> bool:
+        """Toggle playback pause state"""
+        if self.playback_paused:
+            return self.resume_playback()
+        else:
+            return self.pause_playback()
+    
+    def get_status(self) -> dict:
+        """Get current queue status including pause state"""
+        return {
+            "queue_size": len(self.queue),
+            "current_track": self.current_track.title if self.current_track else None,
+            "playback_paused": self.playback_paused,
+            "is_generating": self.is_generating,
+            "auto_queue": self.auto_queue,
+            "genre": self.current_genre,
+            "theme": self.current_theme,
+            "language": self.current_language
+        }

@@ -8,6 +8,7 @@ import subprocess
 import os
 import time
 import gc
+import uuid
 from pathlib import Path
 from typing import Optional, Tuple
 from llama_cpp import Llama
@@ -30,7 +31,7 @@ class RadioEngine:
         
         Args:
             checkpoint_path: Ścieżka do modeli ACE-Step
-            cpu_offload: Czy używać CPU zamiast GPU
+            cpu_offload: Czy włączyć CPU offload (GPU+CPU hybryda)
         """
         # Setup paths
         self.output_dir = OUTPUT_DIR
@@ -44,8 +45,8 @@ class RadioEngine:
         # Initialize models
         self.checkpoint_path = checkpoint_path or str(ACE_CHECKPOINT_PATH)
         self.cpu_offload = cpu_offload
-        self.device = "cuda" if torch.cuda.is_available() and not cpu_offload else "cpu"
-        self.torch_dtype = torch.float16 if self.device == "cuda" else torch.float32
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.torch_dtype = torch.bfloat16 if self.device == "cuda" else torch.float32
         
         # Model instances (will be loaded on demand)
         self.llm = None
@@ -89,34 +90,72 @@ class RadioEngine:
             # Try with torch_compile first, fallback to eager mode if it fails
             torch_compile_enabled = TORCH_COMPILE
             
+            # Clear torch compile cache to prevent FileExistsError on Windows  
+            if torch_compile_enabled:
+                try:
+                    import torch._dynamo
+                    
+                    # For Windows: Set suppress_errors to enable graceful fallback to eager
+                    torch._dynamo.config.suppress_errors = True
+                    torch._dynamo.config.verbose = False
+                    
+                    # Set cache environment for better Windows compatibility
+                    os.environ['TORCH_COMPILE_DEBUG'] = '0'
+                    os.environ['TORCHDYNAMO_CACHE_SIZE_LIMIT'] = '1'
+                    
+                    # Create unique temp directory for this session
+                    session_id = str(uuid.uuid4())[:8]
+                    temp_cache_dir = self.temp_dir / f"torch_cache_{session_id}"
+                    temp_cache_dir.mkdir(exist_ok=True)
+                    os.environ['TORCHINDUCTOR_CACHE_DIR'] = str(temp_cache_dir)
+                    
+                    print(f"🔧 torch_compile setup: suppress_errors=True, cache_dir={temp_cache_dir}")
+                    
+                except Exception as e:
+                    print(f"⚠️ torch_compile setup failed: {e}")
+                    torch_compile_enabled = False  # Disable if setup fails
+            
             try:
+                print(f"🔧 Initializing ACE-Step Pipeline with cpu_offload={self.cpu_offload}")
+                print(f"🔧 Using torch_compile={torch_compile_enabled} (Official ACE-Step 8GB optimization)")
+                if torch_compile_enabled:
+                    print(f"💡 torch_compile enabled with suppress_errors=True (graceful Windows fallback)")
+                # Use bfloat16 for better performance (works with CPU offload too)
+                dtype = "bfloat16"
+                print(f"🔧 Using dtype: {dtype}")
+                print(f"🔧 FIXED: ACE-Step quantized CPU offload bugs + disabled quantized (repo missing)")
+                
                 self.ace_pipeline = ACEStepPipeline(
                     checkpoint_dir=self.checkpoint_path,
-                    dtype=TORCH_DTYPE,
+                    dtype=dtype,
                     torch_compile=torch_compile_enabled,  # Use official recommendation
                     cpu_offload=self.cpu_offload,  # Pass CPU offload setting
+                    quantized=False,  # FIXED: Disable quantized (repo doesn't exist)
                     overlapped_decode=OVERLAPPED_DECODE  # Official 8GB VRAM optimization
                 )
+                print(f"✅ ACE-Step Pipeline loaded - CPU offload: {self.ace_pipeline.cpu_offload}")
             except Exception as e:
                 if torch_compile_enabled and TORCH_COMPILE_FALLBACK:
                     print(f"⚠️ torch_compile failed ({e}), falling back to eager mode...")
-                    # Set torch._dynamo fallback for this session
-                    try:
-                        import torch._dynamo
-                        torch._dynamo.config.suppress_errors = True
-                        print("✅ Dynamo suppress_errors enabled")
-                    except ImportError:
-                        pass
+                    print(f"💡 This is normal on Windows - CPU offload + eager mode still provides 8GB optimization")
                     
                     # Retry without torch_compile
+                    print(f"🔧 Retrying ACE-Step Pipeline with cpu_offload={self.cpu_offload} (eager mode)")
+                    print(f"🔧 Using torch_compile=False (Windows fallback)")
+                    # Use bfloat16 for better performance (works with CPU offload too)
+                    dtype = "bfloat16"
+                    print(f"🔧 Using dtype: {dtype}")
+                    print(f"🔧 FIXED: ACE-Step quantized CPU offload bugs + disabled quantized (repo missing)")
+                    
                     self.ace_pipeline = ACEStepPipeline(
                         checkpoint_dir=self.checkpoint_path,
-                        dtype=TORCH_DTYPE,
+                        dtype=dtype,
                         torch_compile=False,  # Disabled for Windows compatibility
                         cpu_offload=self.cpu_offload,
+                        quantized=False,  # FIXED: Disable quantized (repo doesn't exist)
                         overlapped_decode=OVERLAPPED_DECODE
                     )
-                    print("✅ ACE-Step Pipeline loaded in eager mode")
+                    print(f"✅ ACE-Step Pipeline loaded in eager mode - CPU offload: {self.ace_pipeline.cpu_offload}")
                 else:
                     raise
         return self.ace_pipeline
@@ -140,6 +179,15 @@ class RadioEngine:
             torch.cuda.synchronize()
             torch.cuda.empty_cache()
             torch.cuda.reset_peak_memory_stats()
+        
+        # Clean torch compile cache
+        try:
+            torch_cache_dirs = list(self.temp_dir.glob("torch_cache_*"))
+            for cache_dir in torch_cache_dirs:
+                import shutil
+                shutil.rmtree(cache_dir, ignore_errors=True)
+        except:
+            pass
         
         # Multiple GC passes
         for _ in range(3):
@@ -213,12 +261,65 @@ class RadioEngine:
         """Synchroniczne generowanie muzyki"""
         try:
             print(f"Generating music: duration={duration}s")
+            print(f"🔧 CPU Offload enabled: {self.cpu_offload}")
+            
+            # Monitor VRAM before generation
+            if torch.cuda.is_available():
+                allocated_before = torch.cuda.memory_allocated() / (1024 ** 3)
+                reserved_before = torch.cuda.memory_reserved() / (1024 ** 3)
+                print(f"🔍 VRAM before generation - Allocated: {allocated_before:.2f}GB, Reserved: {reserved_before:.2f}GB")
+                
+                # Try to get real GPU memory usage
+                try:
+                    import subprocess
+                    result = subprocess.run(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,noheader,nounits'], 
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        real_usage = float(result.stdout.strip()) / 1024  # Convert MB to GB
+                        print(f"🔍 Real GPU Memory Usage: {real_usage:.2f}GB")
+                except:
+                    pass
             
             # Load pipeline
             pipeline = self._load_ace_pipeline()
+            print(f"🔧 Pipeline CPU Offload status: {pipeline.cpu_offload}")
+            
+            # Monitor VRAM after pipeline load
+            if torch.cuda.is_available():
+                allocated_after_load = torch.cuda.memory_allocated() / (1024 ** 3)
+                reserved_after_load = torch.cuda.memory_reserved() / (1024 ** 3)
+                print(f"🔍 VRAM after pipeline load - Allocated: {allocated_after_load:.2f}GB, Reserved: {reserved_after_load:.2f}GB")
+                
+                # Try to get real GPU memory usage
+                try:
+                    import subprocess
+                    result = subprocess.run(['nvidia-smi', '--query-gpu=memory.used', '--format=csv,noheader,nounits'], 
+                                          capture_output=True, text=True)
+                    if result.returncode == 0:
+                        real_usage = float(result.stdout.strip()) / 1024  # Convert MB to GB
+                        print(f"🔍 Real GPU Memory Usage: {real_usage:.2f}GB")
+                        
+                        # Check if CPU offload is really working
+                        if self.cpu_offload and real_usage > 4.0:
+                            print(f"⚠️ WARNING: CPU offload enabled but real GPU usage high ({real_usage:.2f}GB)")
+                            print(f"🔧 This indicates CPU offload decorators are not working properly")
+                except:
+                    pass
+                    
+            # Check if CPU offload is really working with PyTorch memory
+            if self.cpu_offload and allocated_after_load > 2.0:
+                print(f"⚠️ WARNING: CPU offload enabled but PyTorch VRAM usage high ({allocated_after_load:.2f}GB)")
+                print(f"🔧 Models may not be properly moved to CPU")
             
             # Generate music with ACE-Step
             with torch.inference_mode():
+                print(f"🔄 Starting music generation with ACE-Step...")
+                
+                # Monitor VRAM during generation start
+                if torch.cuda.is_available():
+                    allocated_start = torch.cuda.memory_allocated() / (1024 ** 3)
+                    print(f"🔍 VRAM at generation start: {allocated_start:.2f}GB")
+                
                 results = pipeline(
                     audio_duration=float(duration),
                     prompt=tags,
@@ -230,6 +331,16 @@ class RadioEngine:
                     omega_scale=10.0,
                     batch_size=1
                 )
+                
+                # Monitor VRAM during generation
+                if torch.cuda.is_available():
+                    allocated_during = torch.cuda.memory_allocated() / (1024 ** 3)
+                    print(f"🔍 VRAM during generation: {allocated_during:.2f}GB")
+            
+            # Monitor VRAM after generation
+            if torch.cuda.is_available():
+                allocated_after_gen = torch.cuda.memory_allocated() / (1024 ** 3)
+                print(f"🔍 VRAM after generation: {allocated_after_gen:.2f}GB")
             
             audio_path = Path(results[0])
             print(f"Music generated: {audio_path}")
@@ -240,6 +351,12 @@ class RadioEngine:
             raise
         finally:
             self._unload_ace_pipeline()
+            
+            # Monitor VRAM after cleanup
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                allocated_final = torch.cuda.memory_allocated() / (1024 ** 3)
+                print(f"🔍 VRAM after cleanup: {allocated_final:.2f}GB")
     
     async def generate_music_async(self, lyrics: str, tags: str, duration: int, max_length: int) -> Path:
         """
