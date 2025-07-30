@@ -175,7 +175,13 @@ class RadioCog(commands.Cog):
                 metrics.record_song_generation(genre, language, generation_time)
             
             # Convert for Discord
-            discord_audio_path = self.radio_engine.convert_for_discord(audio_path)
+            try:
+                discord_audio_path = self.radio_engine.convert_for_discord(audio_path)
+                print(f"✅ Audio converted for Discord: {discord_audio_path}")
+            except Exception as e:
+                print(f"⚠️ Audio conversion failed, trying original file: {e}")
+                # Fallback: try original file directly
+                discord_audio_path = audio_path
             
             # Stop current playback if any
             if voice_client.is_playing():
@@ -721,7 +727,13 @@ class RadioCog(commands.Cog):
                     if track:
                         try:
                             # Convert for Discord
-                            discord_audio_path = self.radio_engine.convert_for_discord(track.path)
+                            try:
+                                discord_audio_path = self.radio_engine.convert_for_discord(track.path)
+                                print(f"✅ Auto-play audio converted: {discord_audio_path}")
+                            except Exception as conv_e:
+                                print(f"⚠️ Auto-play conversion failed, using original: {conv_e}")
+                                discord_audio_path = track.path
+                            
                             source = discord.FFmpegPCMAudio(str(discord_audio_path))
                             voice_client.play(source)
                             print(f"Auto-playing: {track.title}")

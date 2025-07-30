@@ -383,7 +383,7 @@ class RadioEngine:
     
     def convert_for_discord(self, audio_path: Path) -> Path:
         """
-        Konwertuj audio dla Discord (PCM 48kHz stereo)
+        Konwertuj audio dla Discord (WAV 48kHz stereo)
         
         Args:
             audio_path: Ścieżka do oryginalnego pliku audio
@@ -392,28 +392,42 @@ class RadioEngine:
             Path: Ścieżka do skonwertowanego pliku
         """
         try:
-            output_path = self.temp_dir / f"discord_{audio_path.stem}.pcm"
+            output_path = self.temp_dir / f"discord_{audio_path.stem}.wav"
             
-            # FFmpeg command for Discord-compatible audio
+            # First check input file info
+            info_cmd = ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", str(audio_path)]
+            info_result = subprocess.run(info_cmd, capture_output=True, text=True)
+            if info_result.returncode == 0:
+                print(f"🔍 Input audio info: {info_result.stdout[:200]}...")
+            
+            # FFmpeg command for Discord-compatible audio (WAV format)
             cmd = [
                 "ffmpeg", "-y",  # -y to overwrite
                 "-i", str(audio_path),
-                "-f", "s16le",  # PCM signed 16-bit little-endian
+                "-acodec", "pcm_s16le",  # PCM signed 16-bit little-endian
                 "-ar", str(DISCORD_SAMPLE_RATE),  # 48000 Hz
                 "-ac", str(DISCORD_CHANNELS),  # 2 channels (stereo)
+                "-f", "wav",  # WAV format with proper headers
                 str(output_path)
             ]
             
+            print(f"🔧 FFmpeg command: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True)
             
             if result.returncode != 0:
+                print(f"❌ FFmpeg stderr: {result.stderr}")
+                print(f"❌ FFmpeg stdout: {result.stdout}")
                 raise Exception(f"FFmpeg error: {result.stderr}")
             
-            print(f"Audio converted for Discord: {output_path}")
-            return output_path
+            # Check if output file exists and has content
+            if output_path.exists() and output_path.stat().st_size > 0:
+                print(f"✅ Audio converted for Discord: {output_path} ({output_path.stat().st_size} bytes)")
+                return output_path
+            else:
+                raise Exception(f"Output file is empty or doesn't exist: {output_path}")
             
         except Exception as e:
-            print(f"Audio conversion failed: {e}")
+            print(f"❌ Audio conversion failed: {e}")
             raise
     
     def prepare_upload_file(self, audio_path: Path, format: str = "wav") -> Path:
