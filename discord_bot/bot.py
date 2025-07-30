@@ -14,10 +14,10 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 # Local imports
-from config.settings import *
-from config.constants import ERROR_MESSAGES, SUCCESS_MESSAGES
-from utils.metrics import init_metrics
-from utils.model_downloader import ensure_models_available, check_model_space
+from discord_bot.config.settings import *
+from discord_bot.config.constants import ERROR_MESSAGES, SUCCESS_MESSAGES
+from discord_bot.utils.metrics import init_metrics
+from discord_bot.utils.model_downloader import ensure_models_available, check_model_space
 
 # ==================== LOGGING ====================
 logging.basicConfig(
@@ -154,6 +154,13 @@ class RadioBot(commands.Bot):
                     logger.warning(f"⚠️ Limited VRAM ({vram_gb:.1f}GB) - Using ACE-Step Official 8GB Optimization")
                     logger.info("🔥 ACE-Step 2025.05.10: CPU_OFFLOAD + TORCH_COMPILE + OVERLAPPED_DECODE")
                     logger.info(f"🔧 Configuration: CPU_OFFLOAD={CPU_OFFLOAD}, TORCH_COMPILE={TORCH_COMPILE}")
+                    
+                    # LLM GPU configuration
+                    if LLM_GPU_ENABLED:
+                        logger.info(f"🔥 LLM GPU acceleration enabled: {LLM_GPU_LAYERS} layers")
+                        logger.info("💡 ACE-Step CPU offload + LLM GPU = optimal 8GB usage")
+                    else:
+                        logger.info("💻 LLM CPU mode: ACE-Step has GPU priority")
                     
                     # Check CUDA version compatibility
                     cuda_version = torch.version.cuda

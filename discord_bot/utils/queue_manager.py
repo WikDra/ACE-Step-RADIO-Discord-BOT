@@ -72,7 +72,7 @@ class RadioQueue:
         self.current_genre = DEFAULT_GENRE
         self.current_theme = DEFAULT_THEME
         self.current_language = DEFAULT_LANGUAGE
-        self.max_length = 60  # NOWA FUNKCJA - max długość utworów
+        self.max_length = DEFAULT_DURATION  # Use default duration from settings
         self.buffer_size = BUFFER_SIZE
         self.auto_queue = True
         
@@ -85,6 +85,8 @@ class RadioQueue:
         self.playback_paused = False  # Only affects playback, not generation
         self.is_generating = False
         
+        print(f"🔍 DEBUG - DEFAULT_DURATION from settings: {DEFAULT_DURATION}")
+        print(f"🔍 DEBUG - self.max_length set to: {self.max_length}")
         print(f"RadioQueue initialized - Genre: {self.current_genre}, Theme: {self.current_theme}, Language: {self.current_language}")
     
     def set_max_length(self, seconds: int) -> bool:
@@ -107,29 +109,17 @@ class RadioQueue:
     
     def set_genre(self, genre: str) -> bool:
         """
-        Walidacja i ustawienie gatunku
+        Ustawienie gatunku (bez walidacji - dowolny tekst)
         
         Args:
             genre: Gatunek muzyki
             
         Returns:
-            bool: True jeśli ustawiono pomyślnie
+            bool: Zawsze True
         """
-        # Lista gatunków z radio_gradio.py
-        valid_genres = [
-            "pop", "rock", "hip hop", "electronic", "lofi", "jazz", 
-            "classical", "ambient", "country", "metal", "death metal", 
-            "doom metal", "reggae", "dub", "blues", "delta blues", 
-            "funk", "disco", "punk"
-        ]
-        
-        if genre.lower() in valid_genres:
-            self.current_genre = genre.lower()
-            print(f"Genre set to: {self.current_genre}")
-            return True
-        else:
-            print(f"Invalid genre: {genre}")
-            return False
+        self.current_genre = genre.strip()  # Usuń białe znaki na początku/końcu
+        print(f"Genre set to: {self.current_genre}")
+        return True
     
     def set_theme(self, theme: str) -> bool:
         """
@@ -141,7 +131,7 @@ class RadioQueue:
         Returns:
             bool: Zawsze True
         """
-        self.current_theme = theme
+        self.current_theme = theme.strip()  # Usuń białe znaki na początku/końcu
         print(f"Theme set to: {self.current_theme}")
         return True
     
@@ -253,7 +243,7 @@ class RadioQueue:
                 # Generate music
                 tags = f"{self.current_genre} song about {self.current_theme}"
                 audio_path = await radio_engine.generate_music_async(
-                    lyrics, tags, 60, self.max_length  # Default 60s, limited by max_length
+                    lyrics, tags, self.max_length, self.max_length  # Use max_length as default duration
                 )
                 
                 # Create track info
@@ -262,7 +252,7 @@ class RadioQueue:
                     genre=self.current_genre,
                     theme=self.current_theme,
                     language=self.current_language,
-                    duration=min(60, self.max_length),
+                    duration=self.max_length,  # Use max_length instead of hardcoded 60
                     lyrics=lyrics,
                     generated_at=datetime.now(),
                     title=f"{self.current_theme.title()} Song",
@@ -407,7 +397,7 @@ class RadioQueue:
             self.current_genre = settings.get("current_genre", DEFAULT_GENRE)
             self.current_theme = settings.get("current_theme", DEFAULT_THEME)
             self.current_language = settings.get("current_language", DEFAULT_LANGUAGE)
-            self.max_length = settings.get("max_length", 60)
+            self.max_length = settings.get("max_length", DEFAULT_DURATION)  # Use DEFAULT_DURATION instead of 60
             self.auto_queue = settings.get("auto_queue", True)
             
             # Load queue (only if paths still exist)

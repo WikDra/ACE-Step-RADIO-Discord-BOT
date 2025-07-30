@@ -58,16 +58,83 @@ class RadioEngine:
         """Załaduj LLM Llama model"""
         if self.llm is None:
             print("Loading LLM model...")
+            print(f"🔍 LLM Debug - LLM_GPU_ENABLED: {LLM_GPU_ENABLED}")
+            print(f"🔍 LLM Debug - LLM_GPU_LAYERS: {LLM_GPU_LAYERS}")
+            print(f"🔍 LLM Debug - self.cpu_offload: {self.cpu_offload}")
+            print(f"🔍 LLM Debug - CPU_OFFLOAD setting: {CPU_OFFLOAD}")
+            
             try:
                 model_path = str(LLM_MODEL_PATH)
+                print(f"🔍 LLM Debug - model_path: {model_path}")
+                
+                # Determine GPU layers based on CPU offload and GPU availability
+                # When ACE-Step uses CPU offload, LLM can use GPU (smart allocation)
+                if LLM_GPU_ENABLED and self.cpu_offload:
+                    gpu_layers = LLM_GPU_LAYERS  # Use all layers on GPU when ACE-Step on CPU
+                    print(f"🔥 LLM GPU acceleration enabled: {gpu_layers} layers (ACE-Step on CPU)")
+                else:
+                    gpu_layers = 0  # CPU only when ACE-Step uses GPU or GPU disabled
+                    print(f"💻 LLM CPU mode: ACE-Step has GPU priority")
+                    print(f"   - LLM_GPU_ENABLED: {LLM_GPU_ENABLED}")
+                    print(f"   - self.cpu_offload: {self.cpu_offload}")
+                
+                print(f"🔍 LLM Debug - Final gpu_layers: {gpu_layers}")
+                
+                # Check llama-cpp GPU detection
+                try:
+                    from llama_cpp import llama_cpp
+                    print(f"🔍 llama-cpp backend info:")
+                    print(f"   - CUDA available: {hasattr(llama_cpp, 'LLAMA_SUPPORTS_GPU_OFFLOAD')}")
+                    if hasattr(llama_cpp, 'llama_print_system_info'):
+                        print("   - System info available")
+                except Exception as e:
+                    print(f"🔍 llama-cpp info check failed: {e}")
+                
+                
                 self.llm = Llama(
                     model_path=model_path,
                     n_ctx=LLM_CONTEXT_SIZE,
-                    n_gpu_layers=LLM_GPU_LAYERS if not self.cpu_offload else 0,
+                    n_gpu_layers=gpu_layers,
                     verbose=False,
                     seed=-1  # Random seed for variety
                 )
+                
+                # Check actual LLM GPU usage after loading
                 print(f"LLM loaded from: {model_path}")
+                
+                # Check if llama-cpp actually loaded on GPU
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        gpu_memory_before = torch.cuda.memory_allocated() / 1024**3
+                        print(f"🔍 GPU memory after LLM load: {gpu_memory_before:.2f}GB")
+                        
+                        # Try to get LLM-specific info if available
+                        if hasattr(self.llm, 'n_gpu_layers'):
+                            print(f"🔍 LLM actual GPU layers: {getattr(self.llm, 'n_gpu_layers', 'Unknown')}")
+                        
+                        # Test a small generation to see GPU activity
+                        print("🧪 Testing LLM GPU activity...")
+                        gpu_before_test = torch.cuda.memory_allocated() / 1024**3
+                        
+                        test_response = self.llm(
+                            "Test", 
+                            max_tokens=1, 
+                            temperature=0.1
+                        )
+                        
+                        gpu_after_test = torch.cuda.memory_allocated() / 1024**3
+                        print(f"🔍 GPU memory during LLM test: {gpu_before_test:.2f}GB → {gpu_after_test:.2f}GB")
+                        
+                        if gpu_after_test > gpu_before_test:
+                            print("✅ LLM is actively using GPU!")
+                        else:
+                            print("⚠️ LLM may not be using GPU (no memory change)")
+                            
+                except Exception as e:
+                    print(f"🔍 GPU check failed: {e}")
+                
+                print(f"🔍 LLM initialization complete")
             except Exception as e:
                 print(f"Failed to load LLM: {e}")
                 self.llm = None

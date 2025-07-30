@@ -8,6 +8,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
+# Try to import torch for GPU detection (graceful fallback if not available)
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+
 # ==================== PATHS ====================
 # Bazuj na rzeczywistych ścieżkach z ACE-Step
 HOME_DIR = Path.home()
@@ -17,9 +24,12 @@ OUTPUT_DIR = HOME_DIR / "ace_discord_output"
 TEMP_DIR = HOME_DIR / "ace_temp"
 
 # ==================== MODELS ====================
-# Z radio_gradio.py
-LLM_MODEL_NAME = "gemma-3-12b-it-abliterated.q4_k_m.gguf"
+# LLM Model Configuration
+LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "Huihui-gemma-3n-E4B-it-abliterated.Q4_K_M.gguf")
 LLM_MODEL_PATH = MODELS_DIR / LLM_MODEL_NAME
+LLM_MODEL_URL = "https://huggingface.co/mradermacher/Huihui-gemma-3n-E4B-it-abliterated-GGUF/resolve/main/Huihui-gemma-3n-E4B-it-abliterated.Q4_K_M.gguf"
+
+# ACE-Step Models
 ACE_CHECKPOINT_PATH = MODELS_DIR
 
 # ==================== DISCORD ====================
@@ -36,8 +46,17 @@ DISCORD_FRAME_SIZE = 20  # ms
 
 # ==================== PERFORMANCE ====================
 CPU_OFFLOAD = os.getenv("CPU_OFFLOAD", "false").lower() == "true"  # Read from .env
-LLM_CONTEXT_SIZE = 4096
-LLM_GPU_LAYERS = -1  # -1 = all layers on GPU
+
+# LLM Performance Settings
+LLM_CONTEXT_SIZE = 8192  # Increased for better lyrics generation
+LLM_GPU_LAYERS = int(os.getenv("LLM_GPU_LAYERS", "-1"))  # -1 = all layers on GPU, 0 = CPU only
+# Smart allocation: When ACE-Step uses CPU offload, LLM can use GPU (optimal 8GB VRAM usage)
+LLM_GPU_ENABLED = TORCH_AVAILABLE and torch.cuda.is_available()  # Always try GPU if available
+print(f"🔍 Settings Debug - CPU_OFFLOAD: {CPU_OFFLOAD}")
+print(f"🔍 Settings Debug - TORCH_AVAILABLE: {TORCH_AVAILABLE}")
+print(f"🔍 Settings Debug - torch.cuda.is_available(): {torch.cuda.is_available() if TORCH_AVAILABLE else 'N/A'}")
+print(f"🔍 Settings Debug - LLM_GPU_ENABLED: {LLM_GPU_ENABLED}")
+print(f"🔍 Settings Debug - LLM_GPU_LAYERS: {LLM_GPU_LAYERS}")
 TORCH_DTYPE = "float16"  # float32 dla CPU
 
 # ACE-Step Official Performance Settings (2025.05.10 Memory Optimization)
@@ -51,7 +70,7 @@ TORCH_COMPILE_FALLBACK = True  # Auto-fallback to eager mode on torch_compile er
 DEFAULT_GENRE = "pop"
 DEFAULT_THEME = "love"
 DEFAULT_LANGUAGE = "english"  
-DEFAULT_DURATION = 30 if CPU_OFFLOAD else 60  # Shorter for limited VRAM
+DEFAULT_DURATION = int(os.getenv("DEFAULT_DURATION", "60"))  # Read from .env
 MAX_LENGTH_MIN = 30
-MAX_LENGTH_MAX = 120 if CPU_OFFLOAD else 300  # Reduced max for 8GB VRAM
+MAX_LENGTH_MAX = int(os.getenv("MAX_LENGTH_MAX", "300"))  # Read from .env
 BUFFER_SIZE = 2 if CPU_OFFLOAD else 3  # Smaller buffer for limited VRAM

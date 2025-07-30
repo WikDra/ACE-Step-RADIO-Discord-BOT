@@ -62,7 +62,7 @@ def download_file(url: str, destination: Path, description: str = None) -> bool:
 
 def download_llm_model(models_dir: Path) -> bool:
     """
-    Download Gemma LLM model for lyrics generation
+    Download Huihui-gemma LLM model for lyrics generation
     
     Args:
         models_dir: Directory where models should be stored
@@ -70,13 +70,15 @@ def download_llm_model(models_dir: Path) -> bool:
     Returns:
         bool: True if successful
     """
-    model_url = "https://huggingface.co/mlabonne/gemma-3-12b-it-abliterated-GGUF/resolve/main/gemma-3-12b-it-abliterated.q4_k_m.gguf"
-    model_file = models_dir / "gemma-3-12b-it-abliterated.q4_k_m.gguf"
+    # Import here to avoid circular imports
+    from ..config.settings import LLM_MODEL_URL, LLM_MODEL_NAME
+    
+    model_file = models_dir / LLM_MODEL_NAME
     
     return download_file(
-        url=model_url,
+        url=LLM_MODEL_URL,
         destination=model_file,
-        description="Gemma LLM Model (for lyrics generation)"
+        description="Huihui-gemma LLM Model (for lyrics generation)"
     )
 
 def download_ace_step_models(models_dir: Path) -> bool:
@@ -124,7 +126,8 @@ def ensure_models_available(models_dir: Path) -> tuple[bool, bool]:
     logger.info("🔍 Checking model availability...")
     
     # Check LLM model
-    llm_file = models_dir / "gemma-3-12b-it-abliterated.q4_k_m.gguf"
+    from ..config.settings import LLM_MODEL_NAME
+    llm_file = models_dir / LLM_MODEL_NAME
     llm_available = llm_file.exists()
     
     if not llm_available:

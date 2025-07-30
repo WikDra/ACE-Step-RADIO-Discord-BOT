@@ -219,3 +219,8 @@ upload_*.wav
 discord_*.pcm
 faded_*.wav
 trimmed_*.wav
+
+# Large binary files that shouldn't be in git
+*.whl
+*.tar.gz
+*.zip

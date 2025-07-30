@@ -52,6 +52,9 @@ class RadioCog(commands.Cog):
         """Pobierz lub stwórz kolejkę dla serwera"""
         if guild_id not in self.queues:
             self.queues[guild_id] = RadioQueue()
+            # Debug: sprawdź czy max_length jest poprawne
+            queue = self.queues[guild_id]
+            print(f"🔍 New queue created - max_length: {queue.max_length}, DEFAULT_DURATION: {DEFAULT_DURATION}")
         return self.queues[guild_id]
     
     def create_embed(self, title: str, description: str, color: discord.Color = discord.Color.blue()) -> discord.Embed:
@@ -421,30 +424,77 @@ class RadioCog(commands.Cog):
     # ==================== USTAWIENIA ====================
     
     @app_commands.command(name="radio_genre", description="Ustaw gatunek muzyki")
-    @app_commands.describe(genre="Nowy gatunek muzyki")
+    @app_commands.describe(genre="Gatunek muzyki (dowolny tekst, np. 'death metal', 'classical orchestral', 'synthwave')")
     async def radio_genre(self, interaction: discord.Interaction, genre: str):
-        """Ustaw gatunek"""
+        """Ustaw gatunek - dowolny tekst"""
         queue = self.get_queue(interaction.guild.id)
         
-        if queue.set_genre(genre):
-            embed = self.create_success_embed(
-                SUCCESS_MESSAGES["setting_updated"].format(setting="Gatunek", value=genre)
-            )
-        else:
-            valid_genres = ", ".join(["pop", "rock", "jazz", "edm", "classical", "hip-hop"])
-            embed = self.create_error_embed(f"Nieprawidłowy gatunek. Dostępne: {valid_genres}")
+        # Sprawdź długość (maksymalnie 100 znaków dla praktyczności)
+        if len(genre.strip()) > 100:
+            embed = self.create_error_embed("Gatunek jest za długi (maksymalnie 100 znaków)")
+            await interaction.response.send_message(embed=embed)
+            return
+            
+        if len(genre.strip()) == 0:
+            embed = self.create_error_embed("Gatunek nie może być pusty")
+            await interaction.response.send_message(embed=embed)
+            return
         
+        queue.set_genre(genre)
+        embed = self.create_success_embed(
+            SUCCESS_MESSAGES["setting_updated"].format(setting="Gatunek", value=genre)
+        )
         await interaction.response.send_message(embed=embed)
     
     @app_commands.command(name="radio_theme", description="Ustaw temat utworów")
-    @app_commands.describe(theme="Nowy temat utworów")
+    @app_commands.describe(theme="Temat utworów (dowolny tekst, np. 'love songs', 'space exploration', 'medieval fantasy')")
     async def radio_theme(self, interaction: discord.Interaction, theme: str):
-        """Ustaw temat"""
+        """Ustaw temat - dowolny tekst"""
         queue = self.get_queue(interaction.guild.id)
+        
+        # Sprawdź długość (maksymalnie 100 znaków dla praktyczności)
+        if len(theme.strip()) > 100:
+            embed = self.create_error_embed("Temat jest za długi (maksymalnie 100 znaków)")
+            await interaction.response.send_message(embed=embed)
+            return
+            
+        if len(theme.strip()) == 0:
+            embed = self.create_error_embed("Temat nie może być pusty")
+            await interaction.response.send_message(embed=embed)
+            return
+        
+        queue.set_theme(theme)
+        embed = self.create_success_embed(
+            SUCCESS_MESSAGES["setting_updated"].format(setting="Temat", value=theme)
+        )
+        await interaction.response.send_message(embed=embed)
+    
+    @app_commands.command(name="radio_style", description="Ustaw gatunek i temat jednocześnie")
+    @app_commands.describe(
+        genre="Gatunek muzyki (dowolny tekst)",
+        theme="Temat utworów (dowolny tekst)"
+    )
+    async def radio_style(self, interaction: discord.Interaction, genre: str, theme: str):
+        """Ustaw gatunek i temat jednocześnie"""
+        queue = self.get_queue(interaction.guild.id)
+        
+        # Walidacja długości
+        if len(genre.strip()) > 100 or len(theme.strip()) > 100:
+            embed = self.create_error_embed("Gatunek i temat mogą mieć maksymalnie 100 znaków każdy")
+            await interaction.response.send_message(embed=embed)
+            return
+            
+        if len(genre.strip()) == 0 or len(theme.strip()) == 0:
+            embed = self.create_error_embed("Gatunek i temat nie mogą być puste")
+            await interaction.response.send_message(embed=embed)
+            return
+        
+        # Ustaw oba parametry
+        queue.set_genre(genre)
         queue.set_theme(theme)
         
         embed = self.create_success_embed(
-            SUCCESS_MESSAGES["setting_updated"].format(setting="Temat", value=theme)
+            f"✅ **Styl zaktualizowany:**\n🎵 **Gatunek:** {genre}\n🎭 **Temat:** {theme}"
         )
         await interaction.response.send_message(embed=embed)
     
@@ -649,8 +699,9 @@ class RadioCog(commands.Cog):
 • `/radio_upload` - Wrzuć plik z utworem na kanał
 
 **Ustawienia:**
-• `/radio_genre` - Ustaw gatunek
-• `/radio_theme` - Ustaw temat
+• `/radio_genre` - Ustaw gatunek (dowolny tekst)
+• `/radio_theme` - Ustaw temat (dowolny tekst)
+• `/radio_style` - Ustaw gatunek i temat jednocześnie
 • `/radio_language` - Ustaw język
 • `/radio_maxlength` - Maks długość
 
@@ -666,6 +717,9 @@ class RadioCog(commands.Cog):
 
 💡 Wszystkie parametry są opcjonalne!
 💡 Pause zatrzymuje tylko odtwarzanie - generacja działa dalej!
+💡 Gatunek i temat: dowolny tekst, możesz napisać np:
+   - "synthwave cyberpunk" jako gatunek
+   - "space exploration and aliens" jako temat
         """
         
         embed = self.create_embed("📚 Pomoc", help_text.strip())
