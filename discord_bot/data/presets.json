@@ -4,41 +4,83 @@
     "theme": "energetic",
     "language": "english",
     "duration": 180,
-    "description": "Energetyczna muzyka do tańca"
+    "description": "Energetic dance music / Energetyczna muzyka do tańca"
   },
   "chill": {
     "genre": "ambient",
     "theme": "relaxing",
     "language": "english",
     "duration": 240,
-    "description": "Spokojna muzyka do relaksu"
+    "description": "Relaxing ambient music / Spokojna muzyka do relaksu"
   },
   "polish_pop": {
     "genre": "pop",
     "theme": "love",
     "language": "polish",
     "duration": 210,
-    "description": "Polski pop o miłości"
+    "description": "Polish love pop / Polski pop o miłości"
   },
   "workout": {
     "genre": "electronic",
     "theme": "motivational",
     "language": "english",
     "duration": 180,
-    "description": "Motywująca muzyka do ćwiczeń"
+    "description": "Motivational workout music / Motywująca muzyka do ćwiczeń"
   },
   "romantic": {
     "genre": "pop",
     "theme": "love",
     "language": "current",
     "duration": 200,
-    "description": "Romantyczne utwory"
+    "description": "Romantic tracks / Romantyczne utwory"
   },
   "focus": {
     "genre": "ambient",
     "theme": "calm",
     "language": "instrumental",
     "duration": 300,
-    "description": "Muzyka do koncentracji"
+    "description": "Focus and concentration music / Muzyka do koncentracji"
+  },
+  "lofi": {
+    "genre": "ambient",
+    "theme": "chill",
+    "language": "instrumental",
+    "duration": 240,
+    "description": "Lo-fi beats for studying / Lo-fi do nauki"
+  },
+  "metal": {
+    "genre": "metal",
+    "theme": "aggressive",
+    "language": "english",
+    "duration": 200,
+    "description": "Heavy metal music / Ciężka muzyka metalowa"
+  },
+  "classical": {
+    "genre": "classical",
+    "theme": "peaceful",
+    "language": "instrumental",
+    "duration": 300,
+    "description": "Classical orchestral music / Klasyczna muzyka orkiestrowa"
+  },
+  "jazz": {
+    "genre": "jazz",
+    "theme": "chill",
+    "language": "instrumental",
+    "duration": 240,
+    "description": "Smooth jazz / Gładki jazz"
+  },
+  "rock": {
+    "genre": "rock",
+    "theme": "energetic",
+    "language": "english",
+    "duration": 210,
+    "description": "Classic rock / Klasyczny rock"
+  },
+  "sad": {
+    "genre": "pop",
+    "theme": "sad",
+    "language": "current",
+    "duration": 200,
+    "description": "Melancholic music / Melancholijna muzyka"
   }
 }
