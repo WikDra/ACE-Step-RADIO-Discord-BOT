@@ -6,27 +6,23 @@ Discord bot for real-time AI music generation, based on **ACE-Step** and **PasiK
 
 ## ⚡ System Requirements
 
-- **VRAM**: Minimum 8GB (RTX 4060 Laptop/RTX 3060 8GB+)
-- **RAM**: 16GB+ system memory
-- **Python**: 3.10+ with CUDA support
-- **CUDA**: 12.4+ (for 8GB VRAM optimizations)
-- **Windows**: Run setup.bat as Administrator for symlinks
+### Minimum Requirements
+- **OS**: Windows 10/11, Linux (Ubuntu 20.04+)
+- **Python**: 3.10+
+- **RAM**: 16GB system memory
+- **GPU**: 8GB VRAM (RTX 4060/RTX 3060 8GB or better)
+- **CUDA**: 11.8+ (12.4+ recommended)
+- **Storage**: 20GB free space
 
-### 🎯 VRAM Optimization Modes
+### GPU Compatibility & VRAM Modes
 
 Bot automatically adapts to available VRAM:
 
-- **4-6GB**: CPU offload mode (slower but functional)
-- **8GB+**: CUDA with optimizations (fast)
-- **12GB+**: Full CUDA mode (fastest)
-
-### 🎮 GPU Compatibility
-
 | GPU Series | Recommended CUDA | VRAM Mode | Performance |
 |------------|------------------|-----------|-------------|
-| **GTX 10xx, RTX 20xx** | CUDA 11.8 | CPU Offload | ⚠️ Slower but works |
-| **RTX 30xx, RTX 40xx** | CUDA 12.6 | CPU Offload | 🚀 Fast optimization |
-| **High VRAM (12GB+)** | Any CUDA | Full CUDA | 🔥 Maximum speed |
+| **GTX 10xx, RTX 20xx** | CUDA 11.8 | CPU Offload (4-6GB) | ⚠️ Slower but functional |
+| **RTX 30xx, RTX 40xx** | CUDA 12.4+ | Optimized (8GB+) | 🚀 Fast |
+| **High VRAM (12GB+)** | CUDA 12.4+ | Full CUDA | 🔥 Maximum speed |
 
 💡 **For RTX 4060 Laptop 8GB**: Set `CPU_OFFLOAD=true` in `.env`
 
@@ -45,13 +41,23 @@ Bot automatically adapts to available VRAM:
 ## 🚀 Quick Start
 
 ### 1. Installation
+
+**Windows:**
 ```bash
 git clone https://github.com/WikDra/ACE-Step-RADIO-Discord-BOT.git
 cd ACE-Step-RADIO-Discord-BOT
-setup.bat  # Windows setup script (requires Conda!)
+setup.bat  # Run as Administrator (requires Conda)
 ```
 
-> **⚠️ IMPORTANT**: `setup.bat` requires **Conda** for proper PyTorch/CUDA installation. Pure pip installation can cause dependency conflicts. For advanced users who insist on pip, use `setup_advanced_pip.bat` (not recommended).
+**Linux:**
+```bash
+git clone https://github.com/WikDra/ACE-Step-RADIO-Discord-BOT.git
+cd ACE-Step-RADIO-Discord-BOT
+chmod +x setup.sh
+./setup.sh  # Requires Conda/Miniconda
+```
+
+> **⚠️ IMPORTANT**: Setup scripts require **Conda** for proper PyTorch/CUDA installation. Pure pip installation can cause dependency conflicts.
 
 ### 2. Configuration
 ```bash
@@ -113,41 +119,25 @@ Quick-start combinations for instant music:
 
 **Languages**: English, Polish, Spanish, French, German, Italian, Portuguese, Russian, Chinese, Japanese, Korean
 
-## ⚙️ System Requirements
+## ⚙️ Software Dependencies
 
-### Minimum
-- **OS**: Windows 10/11, Linux, macOS
-- **Python**: 3.8+  
-- **RAM**: 8GB
-- **Storage**: 10GB free space
-- **GPU**: 4GB VRAM (CUDA) or powerful CPU
-
-### Recommended
-- **Python**: 3.10+
-- **RAM**: 16GB+
-- **GPU**: 8GB+ VRAM (RTX 3070/4060 or better)
-- **Storage**: 20GB+ SSD
-
-### Software Dependencies
-- **FFmpeg**: Audio conversion
+- **FFmpeg**: Required for audio conversion
 - **CUDA Toolkit**: 11.8+ (for GPU acceleration)
-- **Conda/venv**: Python environment management
+- **Conda**: For Python environment management
 
-## 📦 Installation Details
+## 📦 Advanced Installation
 
-### Automatic Setup (Windows)
-```bash
-./setup.bat
-```
-
-### Manual Setup
+### Manual Setup (All Platforms)
 ```bash
 # 1. Create environment
 conda create -n ace-radio python=3.10 -y
 conda activate ace-radio
 
 # 2. Install PyTorch with CUDA
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
+# For RTX 30xx/40xx (CUDA 12.4+)
+conda install pytorch torchvision torchaudio pytorch-cuda=12.4 -c pytorch -c nvidia
+# For GTX 10xx/RTX 20xx (CUDA 11.8)
+# conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
 
 # 3. Install Discord bot dependencies
 pip install -r requirements_discord.txt
@@ -245,29 +235,19 @@ ls -la discord_output/
 
 ### Memory Issues
 
-⚠️ **VRAM Optimization Not Working**:
-```bash
-# Check CUDA version compatibility
-nvidia-smi
+**High VRAM usage (>8GB)?**
+1. Check CUDA version: `nvidia-smi`
+2. Update CUDA to 12.4+ for better optimization
+3. Set `CPU_OFFLOAD=true` in `.env`
+4. Run setup script as Administrator (Windows) or with sudo (Linux)
+5. Restart conda environment
 
-# Bot uses 13GB instead of 8GB? Try:
-# 1. Run setup.bat as Administrator
-# 2. Update CUDA to 12.4+
-# 3. Set CPU_OFFLOAD=true in .env
-# 4. Restart conda environment
-```
-
-📝 **Common VRAM Problems**:
-- **Admin privileges**: Windows needs admin for symlinks
-- **CUDA 11.8**: Upgrade to 12.4+ for better optimization  
-- **torch.compile**: Disable if causing memory issues
-- **Model cache**: Clear ~/.cache/huggingface if corrupted
-
-🔧 **Memory Optimization**:
-- Reduce `MAX_LENGTH_MAX` in settings
-- Enable `CPU_OFFLOAD = True` 
+**Quick Fixes:**
+- Enable `CPU_OFFLOAD = True` in settings
 - Set `TORCH_COMPILE = False` if unstable
-- Restart bot periodically for memory cleanup
+- Clear model cache: `~/.cache/huggingface`
+- Reduce `MAX_LENGTH_MAX` in settings
+- Restart bot periodically
 
 ## 📊 Bot Statistics
 
