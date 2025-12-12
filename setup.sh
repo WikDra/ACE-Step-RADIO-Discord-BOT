@@ -14,6 +14,11 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# CUDA versions to try (in order of preference)
+CUDA_VERSION_PRIMARY="12.4"
+CUDA_VERSION_SECONDARY="12.1"
+CUDA_VERSION_LEGACY="11.8"
+
 # Check if we're in the correct directory
 if [ ! -f "radio_gradio.py" ]; then
     echo -e "${RED}❌ Error: radio_gradio.py not found!${NC}"
@@ -28,14 +33,14 @@ if [ ! -d "discord_bot" ]; then
     exit 1
 fi
 
-echo "[1/7] Checking Python..."
+echo "[1/8] Checking Python..."
 if ! command -v python3 &> /dev/null; then
-    echo -e "${RED}❌ Python 3 not found! Please install Python 3.8+${NC}"
+    echo -e "${RED}❌ Python 3 not found! Please install Python 3.10+${NC}"
     exit 1
 fi
 echo -e "${GREEN}✅ Python found: $(python3 --version)${NC}"
 
-echo "[2/7] Checking Conda..."
+echo "[2/8] Checking Conda..."
 if ! command -v conda &> /dev/null; then
     echo -e "${RED}❌ ERROR: Conda not found!${NC}"
     echo ""
@@ -51,7 +56,7 @@ fi
 echo -e "${GREEN}✅ Conda found${NC}"
 
 # Check if environment exists
-echo "[3/7] Checking Python environment..."
+echo "[3/8] Checking Python environment..."
 if conda env list | grep -q "ace-radio"; then
     echo -e "${GREEN}✅ Environment ace-radio already exists${NC}"
 else
@@ -59,32 +64,32 @@ else
     conda create -n ace-radio python=3.10 -y
 fi
 
-echo "[4/7] Installing PyTorch with CUDA..."
+echo "[4/8] Installing PyTorch with CUDA..."
 echo "🔧 Detecting GPU and installing appropriate CUDA version..."
 
-# Try CUDA 12.4 first (best for RTX 30xx/40xx)
-echo "Attempting CUDA 12.4 installation..."
-if conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=12.4 -c pytorch -c nvidia -y; then
-    echo -e "${GREEN}✅ CUDA 12.4 installed successfully - optimal for RTX 30xx/40xx${NC}"
+# Try CUDA versions in order of preference
+echo "Attempting CUDA ${CUDA_VERSION_PRIMARY} installation..."
+if conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=${CUDA_VERSION_PRIMARY} -c pytorch -c nvidia -y; then
+    echo -e "${GREEN}✅ CUDA ${CUDA_VERSION_PRIMARY} installed successfully - optimal for RTX 30xx/40xx${NC}"
 else
-    echo -e "${YELLOW}⚠️ CUDA 12.4 installation failed, trying CUDA 12.1...${NC}"
-    if conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=12.1 -c pytorch -c nvidia -y; then
-        echo -e "${GREEN}✅ CUDA 12.1 installed - good optimization for RTX 30xx/40xx${NC}"
+    echo -e "${YELLOW}⚠️ CUDA ${CUDA_VERSION_PRIMARY} installation failed, trying CUDA ${CUDA_VERSION_SECONDARY}...${NC}"
+    if conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=${CUDA_VERSION_SECONDARY} -c pytorch -c nvidia -y; then
+        echo -e "${GREEN}✅ CUDA ${CUDA_VERSION_SECONDARY} installed - good optimization for RTX 30xx/40xx${NC}"
     else
-        echo -e "${YELLOW}⚠️ CUDA 12.1 failed, trying legacy CUDA 11.8...${NC}"
-        echo "💡 CUDA 11.8 is for older GPUs (GTX 10xx, RTX 20xx)"
-        conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia -y
-        echo -e "${GREEN}✅ CUDA 11.8 installed - CPU offload will work but slower${NC}"
+        echo -e "${YELLOW}⚠️ CUDA ${CUDA_VERSION_SECONDARY} failed, trying legacy CUDA ${CUDA_VERSION_LEGACY}...${NC}"
+        echo "💡 CUDA ${CUDA_VERSION_LEGACY} is for older GPUs (GTX 10xx, RTX 20xx)"
+        conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=${CUDA_VERSION_LEGACY} -c pytorch -c nvidia -y
+        echo -e "${GREEN}✅ CUDA ${CUDA_VERSION_LEGACY} installed - CPU offload will work but slower${NC}"
     fi
 fi
 
-echo "[5/7] Installing Discord bot dependencies..."
+echo "[5/8] Installing Discord bot dependencies..."
 conda run -n ace-radio pip install -r requirements_discord.txt
 
-echo "[6/7] Installing ACE-Step..."
+echo "[6/8] Installing ACE-Step..."
 conda run -n ace-radio pip install -e .
 
-echo "[7/7] Checking FFmpeg..."
+echo "[7/8] Checking FFmpeg..."
 if ! command -v ffmpeg &> /dev/null; then
     echo -e "${YELLOW}⚠️ FFmpeg not found!${NC}"
     echo "Install FFmpeg:"

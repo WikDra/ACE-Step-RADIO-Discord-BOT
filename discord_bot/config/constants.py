@@ -53,9 +53,6 @@ class MusicThemes(Enum):
     HAPPY = "happy"
     INSTRUMENTAL = "instrumental"
 
-# Bot interface language (read from environment, default to Polish)
-BOT_INTERFACE_LANGUAGE = os.getenv("BOT_LANGUAGE", "polish").lower()
-
 # Multi-language messages for bot interface
 MESSAGES = {
     "english": {
@@ -100,18 +97,52 @@ MESSAGES = {
     }
 }
 
+# Bot interface language (read from environment, default to Polish)
+# Validate against supported languages
+_SUPPORTED_INTERFACE_LANGUAGES = ["english", "polish"]
+_raw_language = os.getenv("BOT_LANGUAGE", "polish").lower()
+BOT_INTERFACE_LANGUAGE = _raw_language if _raw_language in _SUPPORTED_INTERFACE_LANGUAGES else "polish"
+
 # Helper functions to get messages in current language
 def get_error_message(key: str, **kwargs) -> str:
-    """Get error message in current bot interface language"""
+    """Get error message in current bot interface language
+    
+    Args:
+        key: Message key
+        **kwargs: Format arguments (validated to prevent injection)
+    
+    Returns:
+        Formatted error message
+    """
     lang = BOT_INTERFACE_LANGUAGE if BOT_INTERFACE_LANGUAGE in MESSAGES else "polish"
     msg = MESSAGES[lang]["error"].get(key, f"Error: {key}")
-    return msg.format(**kwargs) if kwargs else msg
+    
+    # Validate kwargs keys to prevent format string injection
+    if kwargs:
+        allowed_keys = {"languages", "min", "max", "channel", "title", "setting", "value"}
+        validated_kwargs = {k: v for k, v in kwargs.items() if k in allowed_keys}
+        return msg.format(**validated_kwargs)
+    return msg
 
 def get_success_message(key: str, **kwargs) -> str:
-    """Get success message in current bot interface language"""
+    """Get success message in current bot interface language
+    
+    Args:
+        key: Message key
+        **kwargs: Format arguments (validated to prevent injection)
+    
+    Returns:
+        Formatted success message
+    """
     lang = BOT_INTERFACE_LANGUAGE if BOT_INTERFACE_LANGUAGE in MESSAGES else "polish"
     msg = MESSAGES[lang]["success"].get(key, f"Success: {key}")
-    return msg.format(**kwargs) if kwargs else msg
+    
+    # Validate kwargs keys to prevent format string injection
+    if kwargs:
+        allowed_keys = {"languages", "min", "max", "channel", "title", "setting", "value"}
+        validated_kwargs = {k: v for k, v in kwargs.items() if k in allowed_keys}
+        return msg.format(**validated_kwargs)
+    return msg
 
 # Set messages based on configured language
 _current_lang = BOT_INTERFACE_LANGUAGE if BOT_INTERFACE_LANGUAGE in MESSAGES else "polish"
