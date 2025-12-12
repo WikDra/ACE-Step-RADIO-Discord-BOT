@@ -106,12 +106,21 @@ python discord_bot/bot.py
 
 Quick-start combinations for instant music:
 
+### Original Presets
 - **`party`**: EDM + energetic + english
 - **`chill`**: Ambient + relaxing + english  
 - **`polish_pop`**: Pop + love + polish
 - **`workout`**: Electronic + motivational + english
 - **`romantic`**: Pop + love + current language
 - **`focus`**: Ambient + calm + instrumental
+
+### New in Beta
+- **`lofi`**: Lo-fi beats for studying
+- **`metal`**: Heavy metal music
+- **`classical`**: Classical orchestral
+- **`jazz`**: Smooth jazz
+- **`rock`**: Classic rock
+- **`sad`**: Melancholic music
 
 ## 🎵 Supported Genres & Languages
 
@@ -345,6 +354,14 @@ For issues and support:
 2. Review bot logs: `discord_radio.log`
 3. Run tests: `python -m pytest test_radio_bot.py`
 4. Open GitHub issue with logs and system info
+
+---
+
+## 📚 Additional Documentation
+
+- **[Linux Setup Guide](docs/LINUX_SETUP.md)** - Comprehensive Linux installation guide
+- **[Improvements & Roadmap](IMPROVEMENTS.md)** - Future features and suggestions
+- **[Changelog](CHANGELOG.md)** - Version history and updates
 
 ---
 

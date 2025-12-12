@@ -25,11 +25,16 @@ class MusicGenres(Enum):
     JAZZ = "jazz"
     CLASSICAL = "classical"
     EDM = "edm"
+    ELECTRONIC = "electronic"
     HIP_HOP = "hip-hop"
     COUNTRY = "country"
     BLUES = "blues"
     REGGAE = "reggae"
     AMBIENT = "ambient"
+    METAL = "metal"
+    FUNK = "funk"
+    DISCO = "disco"
+    PUNK = "punk"
 
 class MusicThemes(Enum):
     """Suggested themes"""
@@ -38,11 +43,15 @@ class MusicThemes(Enum):
     SAD = "sad"
     ENERGETIC = "energetic"
     CHILL = "chill"
+    RELAXING = "relaxing"
     MOTIVATIONAL = "motivational"
     ROMANTIC = "romantic"
     NOSTALGIC = "nostalgic"
     AGGRESSIVE = "aggressive"
     PEACEFUL = "peaceful"
+    CALM = "calm"
+    HAPPY = "happy"
+    INSTRUMENTAL = "instrumental"
 
 # Bot interface language (read from environment, default to Polish)
 BOT_INTERFACE_LANGUAGE = os.getenv("BOT_LANGUAGE", "polish").lower()
