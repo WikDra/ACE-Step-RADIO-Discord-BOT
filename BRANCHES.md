@@ -32,15 +32,39 @@ git branch beta 77fe968
 git branch release/1dev e8ecbcc
 ```
 
-## Pushing Branches
+## How to Create Branches Locally
 
-**Note**: Branches have been created locally. To make them visible on GitHub, they need to be pushed:
+Since the branches cannot be pushed from the CI environment, you need to create them locally from the PR commits:
 
 ```bash
-# Push beta branch
-git push -u origin beta
+# First, fetch the PR branch
+git fetch origin copilot/cleanup-readme-and-add-linux-installer
 
-# Push release/1dev branch
+# Create beta branch from commit 77fe968
+git branch beta 77fe968
+
+# Create release/1dev branch from commit e8ecbcc  
+git branch release/1dev e8ecbcc
+
+# Push both branches to make them visible on GitHub
+git push -u origin beta
+git push -u origin release/1dev
+```
+
+**Alternative - Create from the fetched branch:**
+
+```bash
+# Fetch the PR
+git fetch origin copilot/cleanup-readme-and-add-linux-installer:copilot-pr
+
+# Create beta from specific commit in the PR
+git branch beta copilot-pr~1  # This points to commit 77fe968
+
+# Create release/1dev from the base
+git branch release/1dev e8ecbcc
+
+# Push both branches
+git push -u origin beta
 git push -u origin release/1dev
 ```
 
