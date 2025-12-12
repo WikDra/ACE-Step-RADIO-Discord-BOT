@@ -103,6 +103,10 @@ _SUPPORTED_INTERFACE_LANGUAGES = ["english", "polish"]
 _raw_language = os.getenv("BOT_LANGUAGE", "polish").lower()
 BOT_INTERFACE_LANGUAGE = _raw_language if _raw_language in _SUPPORTED_INTERFACE_LANGUAGES else "polish"
 
+# Log warning if invalid language was specified
+if _raw_language != BOT_INTERFACE_LANGUAGE:
+    print(f"⚠️ Warning: Unsupported language '{_raw_language}', falling back to '{BOT_INTERFACE_LANGUAGE}'")
+
 # Helper functions to get messages in current language
 def get_error_message(key: str, **kwargs) -> str:
     """Get error message in current bot interface language

@@ -78,8 +78,14 @@ else
     else
         echo -e "${YELLOW}⚠️ CUDA ${CUDA_VERSION_SECONDARY} failed, trying legacy CUDA ${CUDA_VERSION_LEGACY}...${NC}"
         echo "💡 CUDA ${CUDA_VERSION_LEGACY} is for older GPUs (GTX 10xx, RTX 20xx)"
-        conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=${CUDA_VERSION_LEGACY} -c pytorch -c nvidia -y
-        echo -e "${GREEN}✅ CUDA ${CUDA_VERSION_LEGACY} installed - CPU offload will work but slower${NC}"
+        if conda install -n ace-radio pytorch torchvision torchaudio pytorch-cuda=${CUDA_VERSION_LEGACY} -c pytorch -c nvidia -y; then
+            echo -e "${GREEN}✅ CUDA ${CUDA_VERSION_LEGACY} installed - CPU offload will work but slower${NC}"
+        else
+            echo -e "${RED}❌ All CUDA installations failed!${NC}"
+            echo -e "${YELLOW}Falling back to CPU-only PyTorch...${NC}"
+            conda install -n ace-radio pytorch torchvision torchaudio cpuonly -c pytorch -y
+            echo -e "${YELLOW}⚠️ CPU-only mode installed - will be slow, GPU recommended${NC}"
+        fi
     fi
 fi
 
@@ -97,7 +103,9 @@ if ! command -v ffmpeg &> /dev/null; then
     echo "  Fedora: sudo dnf install ffmpeg"
     echo "  Arch: sudo pacman -S ffmpeg"
 else
-    echo -e "${GREEN}✅ FFmpeg found: $(ffmpeg -version | head -n1)${NC}"
+    # Safely extract ffmpeg version
+    FFMPEG_VERSION=$(ffmpeg -version 2>/dev/null | head -n1 | cut -d' ' -f3 || echo "unknown")
+    echo -e "${GREEN}✅ FFmpeg found (version: ${FFMPEG_VERSION})${NC}"
 fi
 
 echo ""
