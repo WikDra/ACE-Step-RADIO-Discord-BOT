@@ -86,8 +86,8 @@ def ensure_directory_exists(directory):
         os.makedirs(directory)
 
 
-REPO_ID = "ACE-Step/ACE-Step-v1-3.5B"
-REPO_ID_QUANT = REPO_ID + "-q4-K-M" # ??? update this i guess
+REPO_ID = "ACE-Step/ACE-Step-v1.5-3.5B"
+REPO_ID_QUANT = REPO_ID + "-q4-K-M"
 
 
 # class ACEStepPipeline(DiffusionPipeline):
