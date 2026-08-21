@@ -1,0 +1,40 @@
+ACE-Step RADIO Discord BOT
+Copyright (c) 2025-2026 WikDra
+
+This product includes software developed by third parties, licensed under the
+Apache License, Version 2.0 (see LICENSE).
+
+Upstream projects
+-----------------
+
+ACE-Step
+  Copyright (c) ACE-Step Team (StepFun / ACE Studio)
+  https://github.com/ace-step/ACE-Step
+  Licensed under the Apache License, Version 2.0.
+
+ACE-Step-RADIO
+  Copyright (c) PasiKoodaa
+  https://github.com/PasiKoodaa/ACE-Step-RADIO
+  Licensed under the Apache License, Version 2.0.
+  This repository is a fork of ACE-Step-RADIO.
+
+Modifications
+-------------
+
+The following changes were made by WikDra on top of the upstream projects and
+are also released under the Apache License, Version 2.0:
+
+  * discord_bot/ - a new Discord bot front-end for real-time music generation
+    in voice channels (slash commands, generation queue, presets, playback
+    control, file upload).
+  * VRAM and CPU-offload optimisations for running inference on 8 GB GPUs.
+  * Windows setup scripts (setup.bat, setup_advanced_pip.bat,
+    update_upstream.bat) and the accompanying documentation.
+  * Additional documentation: README_DISCORD.md, VRAM_OPTIMIZATION.md,
+    ACE_STEP_CPU_OFFLOAD_FIX.md, LLM_GPU_ACCELERATION.md.
+
+The AI models used by this software are distributed by their respective authors
+under their own terms; see the upstream repositories for details.
+
+ACE-Step, Discord and any other trademarks mentioned are the property of their
+respective owners. This project is not affiliated with or endorsed by them.
